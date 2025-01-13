@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAI NETWORK</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+        .container {
+            width: 90%;
+            max-width: 450px;
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            margin-top: 20px;
+            text-align: center;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 0.5in; /* 0.5 inches distance from top */
+        }
+        .button {
+            width: 100%;
+            padding: 16px;
+            margin: 10px 0;
+            font-size: 1.15rem;
+            color: #fff;
+            background: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .popup-content {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 400px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        .popup-content button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .popup-content .cancel-btn {
+            background: #ff4d4d;
+        }
+        .popup-content .cancel-btn:hover {
+            background: #cc0000;
+        }
+        .popup-close-btn {
+    position: absolute;
+    bottom: 40px; /* নিচ থেকে ১০ পিক্সেল দূরে */
+    left: 50%; /* বাটনটি মাঝখানে রাখতে হবে */
+    transform: translateX(-50%); /* বাটনটিকে একদম মাঝখানে আনতে ব্যবহৃত */
+    padding: 10px 20px;
+    background: red;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+        hr {
+            margin: 20px 0;
+        }
+        input, select {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .button-container .button {
+            width: 48%;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>MAI NETWORK</h2>
+        <div id="profileContainer">
+            <img id="profileImage" src="" alt="Profile Photo" style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 10px; display: none;">
+            <h4 id="userName"></h4>
+        </div>
+        <div class="button-container">
+            <button class="button" onclick="showBalance()">BALANCE</button>
+            <button class="button" onclick="showPopup('taskPopup'); showTasks();">TASK</button>
+            <button class="button" onclick="showPopup('taskPendingPopup'); showPendingTasks();">TASK PENDING</button>
+            <button class="button" onclick="openLink('https://example.com/mining')">MINING</button>
+            <button class="button" onclick="showPopup('withdrawPopup')">WITHDRAW</button>
+            <button class="button" onclick="showPopup('transactionHistoryPopup'); showTransactionHistory();">TRANSACTION HISTORY</button>
+            <button class="button" onclick="openLink('https://example.com/help')">HELP</button>
+            <button class="button" onclick="openLink('https://example.com/support')">SUPPORT TEAM</button>
+            <button class="button" onclick="openLink('https://example.com/referral')">REFERRAL</button>
+            <button class="button" onclick="showPopup('settingsPopup')">SETTINGS</button>
+        </div>
+    </div>
+
+    <!-- Task Popup -->
+    <div id="taskPopup" class="popup">
+        <div class="popup-content">
+            <h2>Task List</h2>
+            <div id="taskPopupContent"></div>
+            <button class="popup-close-btn" onclick="closePopup('taskPopup')">Close</button>
+        </div>
+    </div>
+
+    <!-- Task Pending Popup -->
+    <div id="taskPendingPopup" class="popup">
+        <div class="popup-content">
+            <h2>Task Pending</h2>
+            <div id="taskPendingPopupContent"></div>
+            <button class="popup-close-btn" onclick="closePopup('taskPendingPopup')">Close</button>
+        </div>
+    </div>
+
+    <!-- Withdraw Popup -->
+    <div class="popup" id="withdrawPopup">
+        <div class="popup-content">
+            <h3>Withdraw Funds</h3>
+            <input type="text" id="withdrawName" placeholder="Your Full Name" required>
+            <input type="text" id="withdrawContact" placeholder="Telegram or WhatsApp Number" required>
+            <select id="withdrawMethod" required>
+                <option value="" disabled selected>Select Payment Method</option>
+                <option value="Bkash">Bkash</option>
+                <option value="Nagad">Nagad</option>
+                <option value="USDT">USDT (Tether TRC20)</option>
+            </select>
+            <input type="text" id="withdrawNumber" placeholder="Wallet Number " required>
+            <input type="number" id="withdrawAmount" placeholder="Amount (Minimum $5)" required>
+            <button onclick="submitWithdrawal()">Submit</button>
+            <button class="cancel-btn" onclick="closePopup('withdrawPopup')">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Transaction History Popup -->
+    <div id="transactionHistoryPopup" class="popup">
+        <div class="popup-content">
+            <h2>Transaction History</h2>
+            <div id="transactionHistoryPopupContent"></div>
+            <button class="popup-close-btn" onclick="closePopup('transactionHistoryPopup')">Close</button>
+        </div>
+    </div>
+
+    <!-- Settings Popup -->
+    <div class="popup" id="settingsPopup">
+        <div class="popup-content">
+            <h3>Profile Settings</h3>
+            <input type="file" id="profilePhoto" accept="image/*">
+            <input type="text" id="fullName" placeholder="Your Full Name" required>
+            <input type="email" id="email" placeholder="Email or Number" required>
+            <select id="gender" required>
+                <option value="" disabled selected>Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </select>
+            <input type="text" id="birthDate" placeholder="Date/Month/Year" required>
+            <button onclick="saveProfile()">Save</button>
+            <button class="cancel-btn" onclick="closePopup('settingsPopup')">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+    let userData = JSON.parse(localStorage.getItem('userData')) || { 
+    balance: 0, 
+    tasks: [], 
+    pendingTasks: [], 
+    completedTasks: [], 
+    transactions: [],
+    lastSubmittedTaskTime: 0,  // নতুন টাইমস্ট্যাম্প ফিল্ড
+    profile: {
+        name: "",
+        email: "",
+        gender: "",
+        birthDate: "",
+        photo: ""
+    }
+};
+
+const tasks = [
+    { id: 1, title: "Task 1", description: "Facebook page Follow", rate: 55, START: "https://www.xda-developers.com/set-up-your-own-git-server-at-home" },
+    { id: 2, title: "Task 2", description: "Facebook page Invite", rate: 15, START: "https://clk.kim/XK9Q" },
+    { id: 3, title: "Task 3", description: "Facebook page Review", rate: 85, START: "https://example.com" },
+    { id: 4, title: "Task 4", description: "Facebook page Video Watch", rate: 70, START: "https://example.com" }
+];
+
+function saveData() {
+    console.log("Saving data to localStorage:", userData); // Debugging log
+    localStorage.setItem('userData', JSON.stringify(userData));
+}
+
+function loadData() {
+    const savedData = localStorage.getItem('userData');
+    if (savedData) {
+        userData = JSON.parse(savedData); // userData কে লোড করা
+        showBalance(); // ব্যালেন্স রিফ্রেশ করা
+        showTasks(); // টাস্ক রিফ্রেশ করা
+
+        // টাস্কগুলো চেক করা এবং পেন্ডিং টাস্কের জন্য টাইমার পুনরায় শুরু করা
+        userData.pendingTasks.forEach(taskId => {
+            setTimeout(() => {
+                confirmTask(taskId); // ৫ মিনিট পর কনফার্ম হবে
+            }, 5 * 60 * 1000); // 5 মিনিটের টাইমার
+        });
+    }
+}
+
+// পপআপ দেখানোর ফাংশন
+function showPopup(popupId) {
+  document.getElementById(popupId).style.display = 'flex';
+  window.history.pushState(null, null, window.location.href);
+  
+  // Back button প্রেস করলে পপআপ বন্ধ হবে
+  window.onpopstate = function () {
+    closePopup(popupId);
+  };
+}
+
+// পপআপ বন্ধ করার ফাংশন
+function closePopup(popupId) {
+  document.getElementById(popupId).style.display = 'none';
+}
+
+// বাটন ক্লিক ইভেন্ট
+document.getElementById('taskBtn').addEventListener('click', function () {
+  showPopup('taskPopup');
+});
+
+document.getElementById('taskPendingBtn').addEventListener('click', function () {
+  showPopup('taskPendingPopup');
+});
+
+document.getElementById('transactionHistoryBtn').addEventListener('click', function () {
+  showPopup('transactionHistoryPopup');
+});
+
+function openLink(link) {
+    window.open(link, '_blank');
+}
+
+function showBalance() {
+    alert(`Your current balance is $${userData.balance}`);
+    // You can also update the UI in the container here
+    // Example: document.getElementById('balanceDisplay').textContent = `Balance: $${userData.balance}`;
+}
+
+function showTasks() {
+    let taskList = '';
+    const activeTasks = tasks.filter(task => !userData.pendingTasks.includes(task.id) && !userData.completedTasks.includes(task.id));
+    activeTasks.forEach(task => {
+        taskList += `
+            <div>
+                <h4>${task.title}</h4>
+                <p>${task.description}</p>
+                <p>Rate: $${task.rate}</p>
+                <a href="${task.START}" target="_blank">START</a><br><br>
+                <label>Proof (Text):</label><input type="text" id="proofText${task.id}" required><br>
+                <label>Proof (Image):</label><input type="file" id="proofImage${task.id}" accept="image/*" required><br>
+                <button onclick="submitTask(${task.id})">Submit</button>
+            </div>
+            <hr>`;
+    });
+
+    document.getElementById('taskPopupContent').innerHTML = taskList || 
+        "<p>Currently there is no task available. Please wait 24 hours. 24 hours after, you will receive new tasks. Thanks.</p>";
+}
+
+function submitTask(taskId) {
+    const proofText = document.getElementById(`proofText${taskId}`).value;
+    const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
+
+    const currentTime = new Date().getTime(); // বর্তমান টাইমস্ট্যাম্প
+
+    // চেক করা হচ্ছে যদি আগের টাস্ক সাবমিটের সময় ১ মিনিটের কম হয়ে থাকে
+    if (currentTime - userData.lastSubmittedTaskTime < 60000) {  // 60000 মিলিসেকেন্ড = ১ মিনিট
+        alert("You can only submit one task every minute.");
+        return;
+    }
+
+    if (proofText && proofImage) {
+        alert("Submitting proof...");
+        
+        userData.pendingTasks.push(taskId);
+        userData.lastSubmittedTaskTime = currentTime;  // টাস্ক সাবমিট করার সময় আপডেট করা হচ্ছে
+        saveData();
+
+        showPendingTasks();
+
+        // Hide the task after submission
+        showTasks();
+
+        // Start a 5-minute timer
+        setTimeout(() => {
+            confirmTask(taskId);
+        }, 5 * 60 * 1000); // 5 minutes
+    } else {
+        alert("Please provide both text and image proof.");
+    }
+}
+
+function showPendingTasks() {
+    let pendingList = '';
+    userData.pendingTasks.forEach(taskId => {
+        const task = tasks.find(t => t.id === taskId);
+        pendingList += `
+            <div>
+                <h4>${task.title}</h4>
+                <p>${task.description}</p>
+                <p>Rate: $${task.rate}</p>
+                <p>Status: <span id="taskStatus${task.id}">Pending (5 min)</span></p>
+            </div>
+            <hr>`;
+    });
+
+    // Update the content of the popup after the loop
+    document.getElementById('taskPendingPopupContent').innerHTML = pendingList || "<p>No pending tasks.</p>";
+}
+
+function confirmTask(taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+        console.log(`Confirming Task ID: ${taskId}. Adding $${task.rate} to balance.`);
+        userData.balance += task.rate; // Add rate to balance
+        userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId); // Remove from pending tasks
+        userData.completedTasks.push(taskId); // Add to completed tasks
+        saveData(); // Save updated data to localStorage
+
+        // Update UI after task is confirmed
+        alert(`Task confirmed. New balance: $${userData.balance}`);
+        showBalance(); // Update balance on screen
+
+        // After 24 hours, the task will be moved back to active tasks
+        setTimeout(() => {
+            userData.completedTasks = userData.completedTasks.filter(id => id !== taskId); // Remove from completed tasks
+            saveData(); // Save data again
+            showTasks(); // Refresh the tasks list
+        }, 24 * 60 * 60 * 1000); // 24 hours
+    } else {
+        alert('Task not found!');
+    }
+}
+
+function submitWithdrawal() {
+    const name = document.getElementById('withdrawName').value;
+    const contact = document.getElementById('withdrawContact').value;
+    const method = document.getElementById('withdrawMethod').value;
+    const number = document.getElementById('withdrawNumber').value;
+    const amount = parseFloat(document.getElementById('withdrawAmount').value);
+
+    if (!name || !contact || !method || !amount || amount < 5) {
+        alert("Please fill out all fields correctly. Minimum withdrawal amount is $5.");
+        return;
+    }
+
+    if (amount > userData.balance) {
+        alert("Insufficient balance.");
+        return;
+    }
+
+    // Deduct balance when withdrawal request is submitted
+    userData.balance -= amount;
+    userData.transactions.push({ name, contact, method, amount, status: "Pending" });
+    saveData();
+
+    const message = `New Withdrawal Request:\nName: ${name}\nContact: ${contact}\nMethod: ${method}\nNumber: ${number}\nAmount: $${amount}`;
+    fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            chat_id: '6633541228',
+            text: message,
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        { text: "Confirm", callback_data: `confirm_${amount}` },
+                        { text: "Reject", callback_data: `reject_${amount}` }
+                    ]
+                ]
+            }
+        })
+    })
+    .then(response => response.json())
+    .then(data => console.log(data))
+    .catch(err => console.error(err));
+
+    alert("Withdrawal request submitted. Waiting for approval.");
+    closePopup('withdrawPopup');
+}
+
+function showTransactionHistory() {
+    let historyList = '';
+    userData.transactions.forEach(transaction => {
+        historyList += `
+            <div>
+                <p><strong>Name:</strong> ${transaction.name}</p>
+                <p><strong>Contact:</strong> ${transaction.contact}</p>
+                <p><strong>Method:</strong> ${transaction.method}</p>
+                <p><strong>Number:</strong> ${transaction.number}</p>
+                <p><strong>Amount:</strong> $${transaction.amount}</p>
+                <p><strong>Status:</strong> ${transaction.status}</p>
+                <hr>
+            </div>`;
+    });
+
+    document.getElementById('transactionHistoryPopupContent').innerHTML = historyList || "<p>No transactions found.</p>";
+}
+
+function saveProfile() {
+    const profilePhoto = document.getElementById('profilePhoto').files[0];
+    const fullName = document.getElementById('fullName').value;
+    const email = document.getElementById('email').value;
+    const gender = document.getElementById('gender').value;
+    const birthDate = document.getElementById('birthDate').value;
+
+    if (!fullName || !email || !gender || !birthDate) {
+        alert("Please fill in all fields.");
+        return;
+    }
+
+    // Save the profile information in localStorage
+    let profileData = {
+        name: fullName,
+        email: email,
+        gender: gender,
+        birthDate: birthDate,
+        photo: ""
+    };
+
+    if (profilePhoto) {
+        const reader = new FileReader();
+        reader.onloadend = function() {
+            profileData.photo = reader.result;  // Save image as a data URL
+            userData.profile = profileData;
+            saveData();
+
+            // Show the profile photo and name on the main screen
+            document.getElementById('profileImage').src = reader.result;
+            document.getElementById('profileImage').style.display = 'block';
+            document.getElementById('userName').textContent = fullName;
+
+            closePopup('settingsPopup');
+        };
+        reader.readAsDataURL(profilePhoto);  // Convert file to data URL
+    } else {
+        userData.profile = profileData;
+        saveData();
+
+        // Show the profile photo and name without an image
+        document.getElementById('profileImage').style.display = 'none';
+        document.getElementById('userName').textContent = fullName;
+
+        closePopup('settingsPopup');
+    }
+}
+
+window.onload = function() {
+    // Check if user data exists in localStorage
+    if (userData.profile.name) {
+        // Display profile image and name if data is already available
+        if (userData.profile.photo) {
+            document.getElementById('profileImage').src = userData.profile.photo;
+            document.getElementById('profileImage').style.display = 'block';
+        } else {
+            document.getElementById('profileImage').style.display = 'none';
+        }
+        document.getElementById('userName').textContent = userData.profile.name;
+    } else {
+        // Show settings popup if no profile data is saved
+        showPopup('settingsPopup');
+    }
+
+    // Load existing profile info in settings form (for editing)
+    if (userData.profile.name) {
+        document.getElementById('fullName').value = userData.profile.name;
+    }
+    if (userData.profile.email) {
+        document.getElementById('email').value = userData.profile.email;
+    }
+    if (userData.profile.gender) {
+        document.getElementById('gender').value = userData.profile.gender;
+    }
+    if (userData.profile.birthDate) {
+        document.getElementById('birthDate').value = userData.profile.birthDate;
+        }
+    };
+</script>
+</body>
+</html>
