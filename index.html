@@ -252,21 +252,21 @@ function saveData() {
 function showPopup(popupId) {
     const popup = document.getElementById(popupId);
     popup.style.display = 'flex';
-    window.history.pushState({ popup: popupId }, null); // নতুন state যোগ করা
 
-    window.onpopstate = function (event) {
-        if (event.state && event.state.popup) {
-            closePopup(event.state.popup);
-        } else {
+    popup.addEventListener('click', (e) => {
+        if (e.target === popup) {
             closePopup(popupId);
         }
+    });
+
+    window.history.pushState(null, null, window.location.href);
+    window.onpopstate = function () {
+        closePopup(popupId);
     };
 }
 
 function closePopup(popupId) {
-    const popup = document.getElementById(popupId);
-    popup.style.display = 'none';
-    window.history.back(); // পূর্ববর্তী অবস্থায় ফেরত যাওয়া
+    document.getElementById(popupId).style.display = 'none';
 }
 
 function openLink(link) {
