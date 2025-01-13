@@ -266,9 +266,7 @@ function showPopup(popupId) {
 }
 
 function closePopup(popupId) {
-    const popup = document.getElementById(popupId);
-    popup.style.display = 'none';
-    window.history.back(); // পূর্ববর্তী অবস্থায় ফেরত যাওয়া
+    document.getElementById(popupId).style.display = 'none';
 }
 
 function openLink(link) {
