@@ -202,30 +202,23 @@
     </div>
 
     <!-- Settings Popup -->
-<div class="popup" id="settingsPopup">
-    <div class="popup-content">
-        <h3>Profile Settings</h3>
-        
-        <!-- Profile Image Input -->
-        <input type="file" id="profilePhoto" accept="image/*" onchange="previewAndOptimizeImage(event)">
-        
-        <!-- Profile Image Preview -->
-        <img id="profilePreview" style="width: 80px; height: 80px; border-radius: 50%; margin-top: 10px; display: none;">
-        
-        <input type="text" id="fullName" placeholder="Your Full Name" required>
-        <input type="email" id="email" placeholder="Email or Number" required>
-        <select id="gender" required>
-            <option value="" disabled selected>Select Gender</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
-        </select>
-        <input type="text" id="birthDate" placeholder="Date/Month/Year" required>
-        
-        <button onclick="saveProfile()">Save</button>
-        <button class="cancel-btn" onclick="closePopup('settingsPopup')">Cancel</button>
+    <div class="popup" id="settingsPopup">
+        <div class="popup-content">
+            <h3>Profile Settings</h3>
+            <input type="file" id="profilePhoto" accept="image/*">
+            <input type="text" id="fullName" placeholder="Your Full Name" required>
+            <input type="email" id="email" placeholder="Email or Number" required>
+            <select id="gender" required>
+                <option value="" disabled selected>Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </select>
+            <input type="text" id="birthDate" placeholder="Date/Month/Year" required>
+            <button onclick="saveProfile()">Save</button>
+            <button class="cancel-btn" onclick="closePopup('settingsPopup')">Cancel</button>
+        </div>
     </div>
-</div>
 
     <script>
     let userData = JSON.parse(localStorage.getItem('userData')) || { 
@@ -440,56 +433,6 @@ function showTransactionHistory() {
     document.getElementById('transactionHistoryPopupContent').innerHTML = historyList || "<p>No transactions found.</p>";
 }
 
-// Function to preview the profile image before uploading
-function previewImage(event) {
-    const reader = new FileReader();
-    reader.onload = function() {
-        const profilePreview = document.getElementById('profilePreview');
-        profilePreview.src = reader.result;
-        profilePreview.style.display = 'block';
-    };
-    reader.readAsDataURL(event.target.files[0]);
-}
-
-// Function to optimize the image size
-function optimizeImage(file, callback) {
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        const img = new Image();
-        img.src = event.target.result;
-
-        img.onload = function() {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-
-            const MAX_WIDTH = 100;
-            const MAX_HEIGHT = 100;
-            let width = img.width;
-            let height = img.height;
-
-            if (width > height) {
-                if (width > MAX_WIDTH) {
-                    height = Math.round((height * MAX_WIDTH) / width);
-                    width = MAX_WIDTH;
-                }
-            } else {
-                if (height > MAX_HEIGHT) {
-                    width = Math.round((width * MAX_HEIGHT) / height);
-                    height = MAX_HEIGHT;
-                }
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-            ctx.drawImage(img, 0, 0, width, height);
-
-            callback(canvas.toDataURL('image/jpeg', 0.7));
-        };
-    };
-    reader.readAsDataURL(file);
-}
-
-// Function to save the profile data
 function saveProfile() {
     const profilePhoto = document.getElementById('profilePhoto').files[0];
     const fullName = document.getElementById('fullName').value;
@@ -512,18 +455,20 @@ function saveProfile() {
     };
 
     if (profilePhoto) {
-        optimizeImage(profilePhoto, function(optimizedDataUrl) {
-            profileData.photo = optimizedDataUrl;  // Save image as a data URL
+        const reader = new FileReader();
+        reader.onloadend = function() {
+            profileData.photo = reader.result;  // Save image as a data URL
             userData.profile = profileData;
             saveData();
 
             // Show the profile photo and name on the main screen
-            document.getElementById('profileImage').src = optimizedDataUrl;
+            document.getElementById('profileImage').src = reader.result;
             document.getElementById('profileImage').style.display = 'block';
             document.getElementById('userName').textContent = fullName;
 
             closePopup('settingsPopup');
-        });
+        };
+        reader.readAsDataURL(profilePhoto);  // Convert file to data URL
     } else {
         userData.profile = profileData;
         saveData();
@@ -536,7 +481,6 @@ function saveProfile() {
     }
 }
 
-// Check and load saved profile data when the page loads
 window.onload = function() {
     // Check if user data exists in localStorage
     if (userData.profile.name) {
@@ -565,7 +509,7 @@ window.onload = function() {
     }
     if (userData.profile.birthDate) {
         document.getElementById('birthDate').value = userData.profile.birthDate;
-      }
+        }
     };
 </script>
 </body>
