@@ -229,22 +229,6 @@ function saveData() {
     localStorage.setItem('userData', JSON.stringify(userData));
 }
 
-function loadData() {
-    const savedData = localStorage.getItem('userData');
-    if (savedData) {
-        userData = JSON.parse(savedData); // userData কে লোড করা
-        showBalance(); // ব্যালেন্স রিফ্রেশ করা
-        showTasks(); // টাস্ক রিফ্রেশ করা
-
-        // টাস্কগুলো চেক করা এবং পেন্ডিং টাস্কের জন্য টাইমার পুনরায় শুরু করা
-        userData.pendingTasks.forEach(taskId => {
-            setTimeout(() => {
-                confirmTask(taskId); // ৫ মিনিট পর কনফার্ম হবে
-            }, 5 * 60 * 1000); // 5 মিনিটের টাইমার
-        });
-    }
-}
-
 // পপআপ দেখানোর ফাংশন
 function showPopup(popupId) {
   document.getElementById(popupId).style.display = 'flex';
@@ -309,19 +293,10 @@ function submitTask(taskId) {
     const proofText = document.getElementById(`proofText${taskId}`).value;
     const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
 
-    const currentTime = new Date().getTime(); // বর্তমান টাইমস্ট্যাম্প
-
-    // চেক করা হচ্ছে যদি আগের টাস্ক সাবমিটের সময় ১ মিনিটের কম হয়ে থাকে
-    if (currentTime - userData.lastSubmittedTaskTime < 60000) {  // 60000 মিলিসেকেন্ড = ১ মিনিট
-        alert("You can only submit one task every minute.");
-        return;
-    }
-
     if (proofText && proofImage) {
         alert("Submitting proof...");
         
         userData.pendingTasks.push(taskId);
-        userData.lastSubmittedTaskTime = currentTime;  // টাস্ক সাবমিট করার সময় আপডেট করা হচ্ছে
         saveData();
 
         showPendingTasks();
