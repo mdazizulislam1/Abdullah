@@ -44,40 +44,28 @@
             background: #0056b3;
         }
         .popup {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-.popup-content {
-    transform: translateY(-20px);
-    animation: slideIn 0.3s ease-in-out forwards;
-}
-
-@keyframes slideIn {
-    from {
-        transform: translateY(-50px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .popup-content {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 400px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
         .popup-content button {
             padding: 10px 20px;
             background: #007bff;
@@ -214,23 +202,30 @@
     </div>
 
     <!-- Settings Popup -->
-    <div class="popup" id="settingsPopup">
-        <div class="popup-content">
-            <h3>Profile Settings</h3>
-            <input type="file" id="profilePhoto" accept="image/*">
-            <input type="text" id="fullName" placeholder="Your Full Name" required>
-            <input type="email" id="email" placeholder="Email or Number" required>
-            <select id="gender" required>
-                <option value="" disabled selected>Select Gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-            </select>
-            <input type="text" id="birthDate" placeholder="Date/Month/Year" required>
-            <button onclick="saveProfile()">Save</button>
-            <button class="cancel-btn" onclick="closePopup('settingsPopup')">Cancel</button>
-        </div>
+<div class="popup" id="settingsPopup">
+    <div class="popup-content">
+        <h3>Profile Settings</h3>
+        
+        <!-- Profile Image Input -->
+        <input type="file" id="profilePhoto" accept="image/*" onchange="previewAndOptimizeImage(event)">
+        
+        <!-- Profile Image Preview -->
+        <img id="profilePreview" style="width: 80px; height: 80px; border-radius: 50%; margin-top: 10px; display: none;">
+        
+        <input type="text" id="fullName" placeholder="Your Full Name" required>
+        <input type="email" id="email" placeholder="Email or Number" required>
+        <select id="gender" required>
+            <option value="" disabled selected>Select Gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+        </select>
+        <input type="text" id="birthDate" placeholder="Date/Month/Year" required>
+        
+        <button onclick="saveProfile()">Save</button>
+        <button class="cancel-btn" onclick="closePopup('settingsPopup')">Cancel</button>
     </div>
+</div>
 
     <script>
     let userData = JSON.parse(localStorage.getItem('userData')) || { 
@@ -509,18 +504,21 @@ window.onload = function() {
         showPopup('settingsPopup');
     }
 
-    // Load existing profile info in settings form (for editing)
-    if (userData.profile.name) {
+if (userData.profile.name) {
+        if (userData.profile.photo) {
+            document.getElementById('profileImage').src = userData.profile.photo;
+            document.getElementById('profileImage').style.display = 'block';
+        } else {
+            document.getElementById('profileImage').style.display = 'none';
+        }
+        document.getElementById('userName').textContent = userData.profile.name;
+
         document.getElementById('fullName').value = userData.profile.name;
-    }
-    if (userData.profile.email) {
         document.getElementById('email').value = userData.profile.email;
-    }
-    if (userData.profile.gender) {
         document.getElementById('gender').value = userData.profile.gender;
-    }
-    if (userData.profile.birthDate) {
         document.getElementById('birthDate').value = userData.profile.birthDate;
+    } else {
+        showPopup('settingsPopup');
         }
     };
 </script>
