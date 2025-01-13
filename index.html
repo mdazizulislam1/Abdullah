@@ -229,34 +229,25 @@ function saveData() {
     localStorage.setItem('userData', JSON.stringify(userData));
 }
 
-// পপআপ দেখানোর ফাংশন
 function showPopup(popupId) {
-  document.getElementById(popupId).style.display = 'flex';
-  window.history.pushState(null, null, window.location.href);
-  
-  // Back button প্রেস করলে পপআপ বন্ধ হবে
-  window.onpopstate = function () {
-    closePopup(popupId);
-  };
+    const popup = document.getElementById(popupId);
+    popup.style.display = 'flex';
+    window.history.pushState({ popup: popupId }, null); // নতুন state যোগ করা
+
+    window.onpopstate = function (event) {
+        if (event.state && event.state.popup) {
+            closePopup(event.state.popup);
+        } else {
+            closePopup(popupId);
+        }
+    };
 }
 
-// পপআপ বন্ধ করার ফাংশন
 function closePopup(popupId) {
-  document.getElementById(popupId).style.display = 'none';
+    const popup = document.getElementById(popupId);
+    popup.style.display = 'none';
+    window.history.back(); // পূর্ববর্তী অবস্থায় ফেরত যাওয়া
 }
-
-// বাটন ক্লিক ইভেন্ট
-document.getElementById('taskBtn').addEventListener('click', function () {
-  showPopup('taskPopup');
-});
-
-document.getElementById('taskPendingBtn').addEventListener('click', function () {
-  showPopup('taskPendingPopup');
-});
-
-document.getElementById('transactionHistoryBtn').addEventListener('click', function () {
-  showPopup('transactionHistoryPopup');
-});
 
 function openLink(link) {
     window.open(link, '_blank');
