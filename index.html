@@ -174,25 +174,23 @@
     </div>
 
     <!-- Withdraw Popup -->
-<div class="popup" id="withdrawPopup">
-    <div class="popup-content">
-        <h3>Withdraw Funds</h3>
-        <form onsubmit="return validateForm()">
-            <input type="text" id="withdrawName" placeholder="Your Full Name" required minlength="3">
-            <input type="text" id="withdrawContact" placeholder="Telegram or WhatsApp Number" required pattern="[0-9+]{7,15}">
+    <div class="popup" id="withdrawPopup">
+        <div class="popup-content">
+            <h3>Withdraw Funds</h3>
+            <input type="text" id="withdrawName" placeholder="Your Full Name" required>
+            <input type="text" id="withdrawContact" placeholder="Telegram or WhatsApp Number" required>
             <select id="withdrawMethod" required>
                 <option value="" disabled selected>Select Payment Method</option>
                 <option value="Bkash">Bkash</option>
                 <option value="Nagad">Nagad</option>
                 <option value="USDT">USDT (Tether TRC20)</option>
             </select>
-            <input type="text" id="withdrawNumber" placeholder="Wallet Number" required minlength="5">
-            <input type="number" id="withdrawAmount" placeholder="Amount (Minimum $5)" required min="5" step="0.01">
-            <button type="submit">Submit</button>
-            <button type="button" class="cancel-btn" onclick="closePopup('withdrawPopup')">Cancel</button>
-        </form>
+            <input type="text" id="withdrawNumber" placeholder="Wallet Number " required>
+            <input type="number" id="withdrawAmount" placeholder="Amount (Minimum $5)" required>
+            <button onclick="submitWithdrawal()">Submit</button>
+            <button class="cancel-btn" onclick="closePopup('withdrawPopup')">Cancel</button>
+        </div>
     </div>
-</div>
 
     <!-- Transaction History Popup -->
     <div id="transactionHistoryPopup" class="popup">
@@ -204,13 +202,11 @@
     </div>
 
     <!-- Settings Popup -->
-<div class="popup" id="settingsPopup">
-    <div class="popup-content">
-        <h3>Profile Settings</h3>
-        <form onsubmit="return validateProfile()">
+    <div class="popup" id="settingsPopup">
+        <div class="popup-content">
+            <h3>Profile Settings</h3>
             <input type="file" id="profilePhoto" accept="image/*">
-            <input type="text" id="username" placeholder="Username" required pattern="[A-Za-z0-9_]{5,15}" title="Username must be 5-15 characters, letters, numbers, or underscores only">
-            <input type="text" id="fullName" placeholder="Your Full Name" required minlength="3">
+            <input type="text" id="fullName" placeholder="Your Full Name" required>
             <input type="email" id="email" placeholder="Email or Number" required>
             <select id="gender" required>
                 <option value="" disabled selected>Select Gender</option>
@@ -218,12 +214,11 @@
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
             </select>
-            <input type="date" id="birthDate" placeholder="Date of Birth" required>
-            <button type="submit">Save</button>
-            <button type="button" class="cancel-btn" onclick="closePopup('settingsPopup')">Cancel</button>
-        </form>
+            <input type="text" id="birthDate" placeholder="Date/Month/Year" required>
+            <button onclick="saveProfile()">Save</button>
+            <button class="cancel-btn" onclick="closePopup('settingsPopup')">Cancel</button>
+        </div>
     </div>
-</div>c
 
     <script>
     let userData = JSON.parse(localStorage.getItem('userData')) || { 
@@ -372,6 +367,7 @@ function confirmTask(taskId) {
     }
 }
 
+// Submit Withdrawal with Validation
 function submitWithdrawal() {
     const name = document.getElementById('withdrawName').value;
     const contact = document.getElementById('withdrawContact').value;
@@ -379,19 +375,12 @@ function submitWithdrawal() {
     const number = document.getElementById('withdrawNumber').value;
     const amount = parseFloat(document.getElementById('withdrawAmount').value);
 
-    if (!name || !contact || !method || !amount || amount < 5) {
-        alert("Please fill out all fields correctly. Minimum withdrawal amount is $5.");
+    if (!validateWithdrawalInputs(name, contact, method, number, amount)) {
         return;
     }
 
-    if (amount > userData.balance) {
-        alert("Insufficient balance.");
-        return;
-    }
-
-    // Deduct balance when withdrawal request is submitted
     userData.balance -= amount;
-    userData.transactions.push({ name, contact, method, amount, status: "Pending" });
+    userData.transactions.push({ name, contact, method, number, amount, status: "Pending" });
     saveData();
 
     const message = `New Withdrawal Request:\nName: ${name}\nContact: ${contact}\nMethod: ${method}\nNumber: ${number}\nAmount: $${amount}`;
@@ -439,7 +428,6 @@ function showTransactionHistory() {
 
 function saveProfile() {
     const profilePhoto = document.getElementById('profilePhoto').files[0];
-    const username = document.getElementById('username').value;
     const fullName = document.getElementById('fullName').value;
     const email = document.getElementById('email').value;
     const gender = document.getElementById('gender').value;
@@ -452,7 +440,6 @@ function saveProfile() {
 
     // Save the profile information in localStorage
     let profileData = {
-        username: username,
         name: fullName,
         email: email,
         gender: gender,
@@ -489,7 +476,7 @@ function saveProfile() {
 
 window.onload = function() {
     // Check if user data exists in localStorage
-    if (userData.profile && userData.profile.name) {
+    if (userData.profile.name) {
         // Display profile image and name if data is already available
         if (userData.profile.photo) {
             document.getElementById('profileImage').src = userData.profile.photo;
@@ -504,20 +491,19 @@ window.onload = function() {
     }
 
     // Load existing profile info in settings form (for editing)
-    if (userData.profile) {
-        if (userData.profile.name) {
-            document.getElementById('fullName').value = userData.profile.name;
+    if (userData.profile.name) {
+        document.getElementById('fullName').value = userData.profile.name;
+    }
+    if (userData.profile.email) {
+        document.getElementById('email').value = userData.profile.email;
+    }
+    if (userData.profile.gender) {
+        document.getElementById('gender').value = userData.profile.gender;
+    }
+    if (userData.profile.birthDate) {
+        document.getElementById('birthDate').value = userData.profile.birthDate;
         }
-        if (userData.profile.email) {
-            document.getElementById('email').value = userData.profile.email;
-        }
-        if (userData.profile.gender) {
-            document.getElementById('gender').value = userData.profile.gender;
-        }
-        if (userData.profile.birthDate) {
-            document.getElementById('birthDate').value = userData.profile.birthDate;
-        }
-     };
+    };
 </script>
 </body>
 </html>
