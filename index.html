@@ -201,6 +201,16 @@
         </div>
     </div>
 
+<div>
+        <h2>রেফারেল সিস্টেম</h2>
+        <p>রেফারেল সংখ্যা: <span id="referralCount">0</span></p>
+        <p>আপনার ব্যালেন্স: <span id="balance">$0.00</span></p>
+        <input type="text" id="referralLink" readonly>
+        <button onclick="showReferral()">রেফারেল লিংক দেখুন</button>
+        <button onclick="addReferral()">রেফারেল যোগ করুন</button>
+        </div>
+    </div>
+
     <!-- Settings Popup -->
     <div class="popup" id="settingsPopup">
         <div class="popup-content">
@@ -221,18 +231,28 @@
     </div>
 
     <script>
+    function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0,
+                    v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+        
     let userData = JSON.parse(localStorage.getItem('userData')) || { 
-    balance: 0, 
-    tasks: [], 
-    pendingTasks: [], 
-    completedTasks: [], 
-    transactions: [],
-    profile: {
-        name: "",
-        email: "",
-        gender: "",
-        birthDate: "",
-        photo: ""
+            balance: 0, 
+            referralCount: 0, 
+            tasks: [], 
+            pendingTasks: [], 
+            completedTasks: [], 
+            transactions: [], 
+            profile: {
+                name: "",
+                email: "",
+                gender: "",
+                birthDate: "",
+                photo: "",
+                referralCode: ""  // এখানে referralCode সংরক্ষণ হবে
     }
 };
 
@@ -431,6 +451,40 @@ function showTransactionHistory() {
 
     document.getElementById('transactionHistoryPopupContent').innerHTML = historyList || "<p>No transactions found.</p>";
 }
+
+if (!userData.profile.referralCode) {
+            userData.profile.referralCode = generateUUID();
+            saveData();  // ডেটা সেভ করুন
+        }
+
+        // রেফারেল লিংক দেখানোর ফাংশন
+        function showReferral() {
+            const referralCode = userData.profile.referralCode; // UUID রেফারেল কোড
+            const referralLink = `https://mdazizulislam1.github.io/Abdullah/?ref=${referralCode}`;
+            document.getElementById('referralLink').value = referralLink;
+            document.getElementById('referralCount').textContent = userData.referralCount;
+            document.getElementById('referralPopup').style.display = 'block';
+        }
+
+        // রেফারেল যোগ করার ফাংশন
+        function addReferral() {
+            userData.referralCount += 1;
+
+            // প্রতি ২৫ রেফারেলে $১ ব্যালেন্সে যোগ হবে
+            if (userData.referralCount % 25 === 0) {
+                userData.balance += 1;
+                alert(`অভিনন্দন! ${userData.referralCount} রেফারেলে $1 যোগ হয়েছে।`);
+            }
+
+            saveData();
+            updateReferralUI();
+        }
+
+        // UI আপডেট করার জন্য ফাংশন
+        function updateReferralUI() {
+            document.getElementById('referralCount').textContent = userData.referralCount;
+            document.getElementById('balance').textContent = `$${userData.balance.toFixed(2)}`;
+        }
 
 function saveProfile() {
     const profilePhoto = document.getElementById('profilePhoto').files[0];
