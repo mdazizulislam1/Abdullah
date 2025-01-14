@@ -147,7 +147,8 @@
         🛠️ SUPPORT TEAM
     </button>
     <button class="button" onclick="showPopup('referralPopup')">
-        🔗 REFERRAL
+    🔗 REFERRAL
+</button>
     </button>
     <button class="button" onclick="showPopup('settingsPopup')">
         ⚙️ SETTINGS
@@ -201,15 +202,17 @@
         </div>
     </div>
 
-<div>
-        <h2>রেফারেল সিস্টেম</h2>
-        <p>রেফারেল সংখ্যা: <span id="referralCount">0</span></p>
-        <p>আপনার ব্যালেন্স: <span id="balance">$0.00</span></p>
-        <input type="text" id="referralLink" readonly>
-        <button onclick="showReferral()">রেফারেল লিংক দেখুন</button>
-        <button onclick="addReferral()">রেফারেল যোগ করুন</button>
-        </div>
+<!-- Referral Popup -->
+<div id="referralPopup" class="popup">
+    <div class="popup-content">
+        <h2>Referral Program</h2>
+        <p>Refer your friends! Earn $1 for every 25 referrals. Your unique link:</p>
+        <textarea id="referralLink" readonly></textarea>
+        <p><strong>Referral Count:</strong> <span id="referralCount">0</span></p>
+        <p>Each referral must complete 4 tasks to count as valid.</p>
+        <button class="popup-close-btn" onclick="closePopup('referralPopup')">Close</button>
     </div>
+</div>
 
     <!-- Settings Popup -->
     <div class="popup" id="settingsPopup">
@@ -231,28 +234,18 @@
     </div>
 
     <script>
-    function generateUUID() {
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                var r = Math.random() * 16 | 0,
-                    v = c === 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
-        }
-        
     let userData = JSON.parse(localStorage.getItem('userData')) || { 
-            balance: 0, 
-            referralCount: 0, 
-            tasks: [], 
-            pendingTasks: [], 
-            completedTasks: [], 
-            transactions: [], 
-            profile: {
-                name: "",
-                email: "",
-                gender: "",
-                birthDate: "",
-                photo: "",
-                referralCode: ""  // এখানে referralCode সংরক্ষণ হবে
+    balance: 0, 
+    tasks: [], 
+    pendingTasks: [], 
+    completedTasks: [], 
+    transactions: [],
+    profile: {
+        name: "",
+        email: "",
+        gender: "",
+        birthDate: "",
+        photo: ""
     }
 };
 
@@ -452,39 +445,52 @@ function showTransactionHistory() {
     document.getElementById('transactionHistoryPopupContent').innerHTML = historyList || "<p>No transactions found.</p>";
 }
 
-if (!userData.profile.referralCode) {
-            userData.profile.referralCode = generateUUID();
-            saveData();  // ডেটা সেভ করুন
+// Unique referral link generation
+const referralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+const referralLink = `${window.location.origin}?ref=${referralCode}`;
+document.getElementById('referralLink').value = referralLink;
+
+// Store referral data
+let referralData = JSON.parse(localStorage.getItem('referralData')) || {
+    totalReferrals: 0,
+    validReferrals: 0,
+    referredUsers: {}
+};
+
+// Show referral count
+document.getElementById('referralCount').textContent = referralData.validReferrals;
+
+// Handle task completion for referrals
+function completeReferralTask(userId) {
+    if (referralData.referredUsers[userId]) {
+        referralData.referredUsers[userId].completedTasks += 1;
+        if (referralData.referredUsers[userId].completedTasks === 4 && !referralData.referredUsers[userId].isCounted) {
+            referralData.validReferrals += 1;
+            referralData.referredUsers[userId].isCounted = true;
+
+            // Update balance for user who referred
+            userData.balance += 1;
+            saveData(); // Save updated user data
         }
+        saveReferralData(); // Save updated referral data
+        document.getElementById('referralCount').textContent = referralData.validReferrals;
+    }
+}
 
-        // রেফারেল লিংক দেখানোর ফাংশন
-        function showReferral() {
-            const referralCode = userData.profile.referralCode; // UUID রেফারেল কোড
-            const referralLink = `https://mdazizulislam1.github.io/Abdullah/?ref=${referralCode}`;
-            document.getElementById('referralLink').value = referralLink;
-            document.getElementById('referralCount').textContent = userData.referralCount;
-            document.getElementById('referralPopup').style.display = 'block';
-        }
+// Save referral data to localStorage
+function saveReferralData() {
+    localStorage.setItem('referralData', JSON.stringify(referralData));
+}
 
-        // রেফারেল যোগ করার ফাংশন
-        function addReferral() {
-            userData.referralCount += 1;
-
-            // প্রতি ২৫ রেফারেলে $১ ব্যালেন্সে যোগ হবে
-            if (userData.referralCount % 25 === 0) {
-                userData.balance += 1;
-                alert(`অভিনন্দন! ${userData.referralCount} রেফারেলে $1 যোগ হয়েছে।`);
-            }
-
-            saveData();
-            updateReferralUI();
-        }
-
-        // UI আপডেট করার জন্য ফাংশন
-        function updateReferralUI() {
-            document.getElementById('referralCount').textContent = userData.referralCount;
-            document.getElementById('balance').textContent = `$${userData.balance.toFixed(2)}`;
-        }
+// Check referral on page load
+const urlParams = new URLSearchParams(window.location.search);
+const ref = urlParams.get('ref');
+if (ref) {
+    const userId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    referralData.referredUsers[userId] = { referrer: ref, completedTasks: 0, isCounted: false };
+    referralData.totalReferrals += 1;
+    saveReferralData();
+}
 
 function saveProfile() {
     const profilePhoto = document.getElementById('profilePhoto').files[0];
