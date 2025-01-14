@@ -146,7 +146,8 @@
     <button class="button" onclick="openLink('https://example.com/support')">
         🛠️ SUPPORT TEAM
     </button>
-    <button class="button" onclick="showReferral()">🔗 REFERRAL</button>
+    <button class="button" onclick="openLink('https://example.com/referral')">
+        🔗 REFERRAL
     </button>
     <button class="button" onclick="showPopup('settingsPopup')">
         ⚙️ SETTINGS
@@ -199,17 +200,6 @@
             <button class="popup-close-btn" onclick="closePopup('transactionHistoryPopup')">Close</button>
         </div>
     </div>
-
-<!-- Referral Popup -->
-<div id="referralPopup" class="popup">
-    <div class="popup-content">
-        <h3>Your Referral Link</h3>
-        <input type="text" id="referralLink" value="https://example.com/register?ref=YOUR_REF_CODE" readonly style="width: 90%; margin-bottom: 10px;">
-        <p>Total Referrals: <span id="referralCount">0</span></p>
-        <button onclick="copyReferralLink()">Copy Link</button>
-        <button class="popup-close-btn" onclick="closePopup('referralPopup')">Close</button>
-    </div>
-</div>
 
     <!-- Settings Popup -->
     <div class="popup" id="settingsPopup">
@@ -443,31 +433,6 @@ function showTransactionHistory() {
     document.getElementById('transactionHistoryPopupContent').innerHTML = historyList || "<p>No transactions found.</p>";
 }
 
-userData.referralCount = userData.referralCount || 0; // যদি না থাকে তবে 0 দিয়ে শুরু
-
-function showReferral() {
-    const referralCode = userData.profile.name || "Anonymous"; // আপনার রেফারেল কোড জেনারেট করার নিয়ম
-    const referralLink = `https://example.com/register?ref=${referralCode}`;
-    document.getElementById('referralLink').value = referralLink;
-    document.getElementById('referralCount').textContent = userData.referralCount; // রেফারাল সংখ্যা দেখান
-    showPopup('referralPopup');
-}
-
-function copyReferralLink() {
-    const referralInput = document.getElementById('referralLink');
-    referralInput.select();
-    referralInput.setSelectionRange(0, 99999); // মোবাইল ডিভাইসের জন্য
-    document.execCommand('copy');
-    alert('Referral link copied to clipboard!');
-}
-
-// যখন কেউ রেফার কোড ব্যবহার করবে, তখন সংখ্যা বাড়বে (ডেমো উদাহরণ)
-function incrementReferralCount() {
-    userData.referralCount += 1; // রেফার সংখ্যা ১ বৃদ্ধি
-    saveData(); // ডেটা লোকাল স্টোরেজে সংরক্ষণ করুন
-    document.getElementById('referralCount').textContent = userData.referralCount; // আপডেট দেখান
-}
-
 function saveProfile() {
     const profilePhoto = document.getElementById('profilePhoto').files[0];
     const fullName = document.getElementById('fullName').value;
@@ -544,6 +509,9 @@ window.onload = function() {
     }
     if (userData.profile.birthDate) {
         document.getElementById('birthDate').value = userData.profile.birthDate;
+    }
+    if (userData.profile.photo) {
+        document.getElementById('photo').value = userData.profile.photo;
         }
     };
 </script>
