@@ -227,7 +227,6 @@
     pendingTasks: [], 
     completedTasks: [], 
     transactions: [],
-    lastSubmittedTaskTime: 0,  // নতুন টাইমস্ট্যাম্প ফিল্ড
     profile: {
         name: "",
         email: "",
@@ -509,9 +508,6 @@ window.onload = function() {
     }
     if (userData.profile.birthDate) {
         document.getElementById('birthDate').value = userData.profile.birthDate;
-    }
-    if (userData.profile.photo) {
-        document.getElementById('photo').value = userData.profile.photo;
         }
     };
 </script>
