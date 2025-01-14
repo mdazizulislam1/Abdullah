@@ -223,7 +223,7 @@
             <button type="button" class="cancel-btn" onclick="closePopup('settingsPopup')">Cancel</button>
         </form>
     </div>
-</div>
+</div>c
 
     <script>
     let userData = JSON.parse(localStorage.getItem('userData')) || { 
@@ -379,26 +379,11 @@ function submitWithdrawal() {
     const number = document.getElementById('withdrawNumber').value;
     const amount = parseFloat(document.getElementById('withdrawAmount').value);
 
-    // Validate form fields
-    if (!name || !contact || !method || !number || !amount || amount < 5) {
+    if (!name || !contact || !method || !amount || amount < 5) {
         alert("Please fill out all fields correctly. Minimum withdrawal amount is $5.");
         return;
     }
 
-    // Validate the phone number (contact), check for valid number (length check)
-    const contactPattern = /^[0-9+]{7,15}$/;
-    if (!contactPattern.test(contact)) {
-        alert("Please enter a valid phone number (Telegram/WhatsApp) with a minimum of 7 digits.");
-        return;
-    }
-
-    // Validate wallet number (for methods like Bkash, Nagad, USDT)
-    if (method && !/^[0-9]{5,}$/.test(number)) {
-        alert("Please enter a valid wallet number (minimum 5 digits).");
-        return;
-    }
-
-    // Check if the withdrawal amount exceeds the available balance
     if (amount > userData.balance) {
         alert("Insufficient balance.");
         return;
@@ -406,12 +391,10 @@ function submitWithdrawal() {
 
     // Deduct balance when withdrawal request is submitted
     userData.balance -= amount;
-    userData.transactions.push({ name, contact, method, number, amount, status: "Pending" });
+    userData.transactions.push({ name, contact, method, amount, status: "Pending" });
     saveData();
 
-    // Prepare message for Telegram bot
     const message = `New Withdrawal Request:\nName: ${name}\nContact: ${contact}\nMethod: ${method}\nNumber: ${number}\nAmount: $${amount}`;
-    
     fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -462,8 +445,7 @@ function saveProfile() {
     const gender = document.getElementById('gender').value;
     const birthDate = document.getElementById('birthDate').value;
 
-    // Validate required fields
-    if (!username || !fullName || !email || !gender || !birthDate) {
+    if (!fullName || !email || !gender || !birthDate) {
         alert("Please fill in all fields.");
         return;
     }
@@ -481,25 +463,25 @@ function saveProfile() {
     if (profilePhoto) {
         const reader = new FileReader();
         reader.onloadend = function() {
-            profileData.photo = reader.result; // Save image as a data URL
+            profileData.photo = reader.result;  // Save image as a data URL
             userData.profile = profileData;
             saveData();
 
-            // Show the profile photo, username, and name on the main screen
+            // Show the profile photo and name on the main screen
             document.getElementById('profileImage').src = reader.result;
             document.getElementById('profileImage').style.display = 'block';
-            document.getElementById('userName').textContent = `${fullName} (${username})`;
+            document.getElementById('userName').textContent = fullName;
 
             closePopup('settingsPopup');
         };
-        reader.readAsDataURL(profilePhoto); // Convert file to data URL
+        reader.readAsDataURL(profilePhoto);  // Convert file to data URL
     } else {
         userData.profile = profileData;
         saveData();
 
-        // Show the profile name and username without an image
+        // Show the profile photo and name without an image
         document.getElementById('profileImage').style.display = 'none';
-        document.getElementById('userName').textContent = `${fullName} (${username})`;
+        document.getElementById('userName').textContent = fullName;
 
         closePopup('settingsPopup');
     }
@@ -507,37 +489,35 @@ function saveProfile() {
 
 window.onload = function() {
     // Check if user data exists in localStorage
-    if (userData.profile.username) {
-        // Display profile image, username, and name if data is already available
+    if (userData.profile && userData.profile.name) {
+        // Display profile image and name if data is already available
         if (userData.profile.photo) {
             document.getElementById('profileImage').src = userData.profile.photo;
             document.getElementById('profileImage').style.display = 'block';
         } else {
             document.getElementById('profileImage').style.display = 'none';
         }
-        document.getElementById('userName').textContent = `${userData.profile.name} (${userData.profile.username})`;
+        document.getElementById('userName').textContent = userData.profile.name;
     } else {
         // Show settings popup if no profile data is saved
         showPopup('settingsPopup');
     }
 
     // Load existing profile info in settings form (for editing)
-    if (userData.profile.username) {
-        document.getElementById('username').value = userData.profile.username;
-    }
-    if (userData.profile.name) {
-        document.getElementById('fullName').value = userData.profile.name;
-    }
-    if (userData.profile.email) {
-        document.getElementById('email').value = userData.profile.email;
-    }
-    if (userData.profile.gender) {
-        document.getElementById('gender').value = userData.profile.gender;
-    }
-    if (userData.profile.birthDate) {
-        document.getElementById('birthDate').value = userData.profile.birthDate;
-    }
-};
+    if (userData.profile) {
+        if (userData.profile.name) {
+            document.getElementById('fullName').value = userData.profile.name;
+        }
+        if (userData.profile.email) {
+            document.getElementById('email').value = userData.profile.email;
+        }
+        if (userData.profile.gender) {
+            document.getElementById('gender').value = userData.profile.gender;
+        }
+        if (userData.profile.birthDate) {
+            document.getElementById('birthDate').value = userData.profile.birthDate;
+        }
+     };
 </script>
 </body>
 </html>
