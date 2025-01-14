@@ -379,11 +379,26 @@ function submitWithdrawal() {
     const number = document.getElementById('withdrawNumber').value;
     const amount = parseFloat(document.getElementById('withdrawAmount').value);
 
-    if (!name || !contact || !method || !amount || amount < 5) {
+    // Validate form fields
+    if (!name || !contact || !method || !number || !amount || amount < 5) {
         alert("Please fill out all fields correctly. Minimum withdrawal amount is $5.");
         return;
     }
 
+    // Validate the phone number (contact), check for valid number (length check)
+    const contactPattern = /^[0-9+]{7,15}$/;
+    if (!contactPattern.test(contact)) {
+        alert("Please enter a valid phone number (Telegram/WhatsApp) with a minimum of 7 digits.");
+        return;
+    }
+
+    // Validate wallet number (for methods like Bkash, Nagad, USDT)
+    if (method && !/^[0-9]{5,}$/.test(number)) {
+        alert("Please enter a valid wallet number (minimum 5 digits).");
+        return;
+    }
+
+    // Check if the withdrawal amount exceeds the available balance
     if (amount > userData.balance) {
         alert("Insufficient balance.");
         return;
@@ -391,10 +406,12 @@ function submitWithdrawal() {
 
     // Deduct balance when withdrawal request is submitted
     userData.balance -= amount;
-    userData.transactions.push({ name, contact, method, amount, status: "Pending" });
+    userData.transactions.push({ name, contact, method, number, amount, status: "Pending" });
     saveData();
 
+    // Prepare message for Telegram bot
     const message = `New Withdrawal Request:\nName: ${name}\nContact: ${contact}\nMethod: ${method}\nNumber: ${number}\nAmount: $${amount}`;
+    
     fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
