@@ -173,24 +173,27 @@
         </div>
     </div>
 
-    <!-- Withdraw Popup -->
-    <div class="popup" id="withdrawPopup">
-        <div class="popup-content">
-            <h3>Withdraw Funds</h3>
-            <input type="text" id="withdrawName" placeholder="Your Full Name" required>
-            <input type="text" id="withdrawContact" placeholder="Telegram or WhatsApp Number" required>
-            <select id="withdrawMethod" required>
-                <option value="" disabled selected>Select Payment Method</option>
-                <option value="Bkash">Bkash</option>
-                <option value="Nagad">Nagad</option>
-                <option value="USDT">USDT (Tether TRC20)</option>
+    <!-- Settings Popup -->
+<div class="popup" id="settingsPopup">
+    <div class="popup-content">
+        <h3>Profile Settings</h3>
+        <form onsubmit="return validateProfile()">
+            <input type="file" id="profilePhoto" accept="image/*">
+            <input type="text" id="username" placeholder="Username" required pattern="[A-Za-z0-9_]{5,15}" title="Username must be 5-15 characters, letters, numbers, or underscores only">
+            <input type="text" id="fullName" placeholder="Your Full Name" required minlength="3">
+            <input type="email" id="email" placeholder="Email or Number" required>
+            <select id="gender" required>
+                <option value="" disabled selected>Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
             </select>
-            <input type="text" id="withdrawNumber" placeholder="Wallet Number " required>
-            <input type="number" id="withdrawAmount" placeholder="Amount (Minimum $5)" required>
-            <button onclick="submitWithdrawal()">Submit</button>
-            <button class="cancel-btn" onclick="closePopup('withdrawPopup')">Cancel</button>
-        </div>
+            <input type="date" id="birthDate" placeholder="Date of Birth" required>
+            <button type="submit">Save</button>
+            <button type="button" class="cancel-btn" onclick="closePopup('settingsPopup')">Cancel</button>
+        </form>
     </div>
+</div>
 
     <!-- Transaction History Popup -->
     <div id="transactionHistoryPopup" class="popup">
@@ -438,7 +441,18 @@ function saveProfile() {
         return;
     }
 
-    // Save the profile information in localStorage
+    // Save Profile with Validation
+function saveProfile() {
+    const profilePhoto = document.getElementById('profilePhoto').files[0];
+    const fullName = document.getElementById('fullName').value;
+    const email = document.getElementById('email').value;
+    const gender = document.getElementById('gender').value;
+    const birthDate = document.getElementById('birthDate').value;
+
+    if (!validateProfileInputs(fullName, email, gender, birthDate)) {
+        return;
+    }
+
     let profileData = {
         name: fullName,
         email: email,
@@ -454,19 +468,17 @@ function saveProfile() {
             userData.profile = profileData;
             saveData();
 
-            // Show the profile photo and name on the main screen
             document.getElementById('profileImage').src = reader.result;
             document.getElementById('profileImage').style.display = 'block';
             document.getElementById('userName').textContent = fullName;
 
             closePopup('settingsPopup');
         };
-        reader.readAsDataURL(profilePhoto);  // Convert file to data URL
+        reader.readAsDataURL(profilePhoto);
     } else {
         userData.profile = profileData;
         saveData();
 
-        // Show the profile photo and name without an image
         document.getElementById('profileImage').style.display = 'none';
         document.getElementById('userName').textContent = fullName;
 
