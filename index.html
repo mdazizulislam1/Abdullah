@@ -202,7 +202,6 @@
         </div>
     </div>
 
-<!-- Referral Popup -->
 <div id="referralPopup" class="popup">
     <div class="popup-content">
         <h2>Referral Program</h2>
@@ -445,52 +444,24 @@ function showTransactionHistory() {
     document.getElementById('transactionHistoryPopupContent').innerHTML = historyList || "<p>No transactions found.</p>";
 }
 
-// Unique referral link generation
-const referralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-const referralLink = `${window.location.origin}?ref=${referralCode}`;
+// ইউনিক রেফারেল কোড জেনারেট এবং সংরক্ষণ
+let referralCode = localStorage.getItem('referralCode');
+if (!referralCode) {
+    referralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    localStorage.setItem('referralCode', referralCode);
+}
+
+// রেফারেল লিংক তৈরি
+const referralLink = `https://mdazizulislam1.github.io/Abdullah/?ref=${referralCode}`;
 document.getElementById('referralLink').value = referralLink;
 
-// Store referral data
+// রেফারেল কাউন্ট এবং ডেটা আপডেট
 let referralData = JSON.parse(localStorage.getItem('referralData')) || {
     totalReferrals: 0,
     validReferrals: 0,
     referredUsers: {}
 };
-
-// Show referral count
 document.getElementById('referralCount').textContent = referralData.validReferrals;
-
-// Handle task completion for referrals
-function completeReferralTask(userId) {
-    if (referralData.referredUsers[userId]) {
-        referralData.referredUsers[userId].completedTasks += 1;
-        if (referralData.referredUsers[userId].completedTasks === 4 && !referralData.referredUsers[userId].isCounted) {
-            referralData.validReferrals += 1;
-            referralData.referredUsers[userId].isCounted = true;
-
-            // Update balance for user who referred
-            userData.balance += 1;
-            saveData(); // Save updated user data
-        }
-        saveReferralData(); // Save updated referral data
-        document.getElementById('referralCount').textContent = referralData.validReferrals;
-    }
-}
-
-// Save referral data to localStorage
-function saveReferralData() {
-    localStorage.setItem('referralData', JSON.stringify(referralData));
-}
-
-// Check referral on page load
-const urlParams = new URLSearchParams(window.location.search);
-const ref = urlParams.get('ref');
-if (ref) {
-    const userId = Math.random().toString(36).substring(2, 8).toUpperCase();
-    referralData.referredUsers[userId] = { referrer: ref, completedTasks: 0, isCounted: false };
-    referralData.totalReferrals += 1;
-    saveReferralData();
-}
 
 function saveProfile() {
     const profilePhoto = document.getElementById('profilePhoto').files[0];
@@ -572,4 +543,4 @@ window.onload = function() {
     };
 </script>
 </body>
-</html>
+        </html>
