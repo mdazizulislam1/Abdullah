@@ -447,7 +447,7 @@ function showTransactionHistory() {
 
 // Generate unique referral link
 function generateReferralLink() {
-    const userId = userData.profile.name || 'guest'; // Use profile name or 'guest' if not logged in
+    const userId = userData.profile.email || 'guest'; // Use profile email or 'guest' if not logged in
     const referralLink = `https://mdazizulislam1.github.io/Abdullah/?ref=${encodeURIComponent(userId)}`;
     document.getElementById('referralLink').value = referralLink;
 }
