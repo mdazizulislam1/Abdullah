@@ -329,7 +329,26 @@ function submitTask(taskId) {
         // Hide the task after submission
         showTasks();
 
-        // Send withdrawal request to Telegram
+        // Create FormData object to send file via fetch
+        const formData = new FormData();
+        formData.append('chat_id', '6633541228');
+        formData.append('photo', proofImage);
+        formData.append('caption', `New Task Submitted:\nTask: ${tasks[taskId - 1].title}\nProof: ${proofText}`);
+
+        // Send proof (image + text) to Telegram
+        fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendPhoto`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data);
+        })
+        .catch(err => {
+            console.error(err);
+        });
+
+        // Also send inline keyboard options for Confirm/Reject
         const message = `New Task Submitted:\nTask: ${tasks[taskId - 1].title}\nProof: ${proofText}`;
         
         fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendMessage`, {
@@ -351,6 +370,7 @@ function submitTask(taskId) {
         .then(response => response.json())
         .then(data => console.log(data))
         .catch(err => console.error(err));
+
     } else {
         alert("Please provide both text and image proof.");
     }
@@ -513,7 +533,7 @@ function trackReferral() {
     }
 }
 
-// Display referral data in popup
+        // Display referral data in popup
 function showReferralData() {
     const referralCount = Object.values(userData.referrals || {}).reduce((sum, count) => sum + count, 0);
     const referralEarnings = Math.floor(referralCount / 25);
