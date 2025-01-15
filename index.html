@@ -329,12 +329,45 @@ function submitTask(taskId) {
         // Hide the task after submission
         showTasks();
 
-        // Start a 5-minute timer
-        setTimeout(() => {
-            confirmTask(taskId);
-        }, 5 * 60 * 1000); // 5 minutes
+        // Send withdrawal request to Telegram
+        const message = `New Task Submitted:\nTask: ${tasks[taskId - 1].title}\nProof: ${proofText}`;
+        
+        fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: '6633541228',
+                text: message,
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            { text: "Confirm", callback_data: `confirm_${taskId}` },
+                            { text: "Reject", callback_data: `reject_${taskId}` }
+                        ]
+                    ]
+                }
+            })
+        })
+        .then(response => response.json())
+        .then(data => console.log(data))
+        .catch(err => console.error(err));
     } else {
         alert("Please provide both text and image proof.");
+    }
+}
+
+function handleCallbackQuery(callbackQuery) {
+    const callbackData = callbackQuery.data;
+    const taskId = callbackData.split('_')[1];
+
+    if (callbackData.startsWith('confirm_')) {
+        // Task confirmed
+        alert(`Task ${taskId} has been confirmed.`);
+        // Perform confirmation logic here, like updating the task status in your system
+    } else if (callbackData.startsWith('reject_')) {
+        // Task rejected
+        alert(`Task ${taskId} has been rejected.`);
+        // Perform rejection logic here, like removing or marking the task as rejected
     }
 }
 
@@ -360,23 +393,22 @@ function confirmTask(taskId) {
     const task = tasks.find(t => t.id === taskId);
     if (task) {
         console.log(`Confirming Task ID: ${taskId}. Adding $${task.rate} to balance.`);
-        userData.balance += task.rate; // Add rate to balance
-        userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId); // Remove from pending tasks
-        userData.completedTasks.push(taskId); // Add to completed tasks
-        saveData(); // Save updated data to localStorage
+        userData.balance += task.rate;
+        userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
+        userData.completedTasks.push(taskId);
+        saveData();
 
-        // Update UI after task is confirmed
         alert(`Task confirmed. New balance: $${userData.balance}`);
-        showBalance(); // Update balance on screen
+        showBalance();
+    }
+}
 
-        // After 24 hours, the task will be moved back to active tasks
-        setTimeout(() => {
-            userData.completedTasks = userData.completedTasks.filter(id => id !== taskId); // Remove from completed tasks
-            saveData(); // Save data again
-            showTasks(); // Refresh the tasks list
-        }, 24 * 60 * 60 * 1000); // 24 hours
-    } else {
-        alert('Task not found!');
+function rejectTask(taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+        console.log(`Rejecting Task ID: ${taskId}`);
+        userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
+        saveData();
     }
 }
 
