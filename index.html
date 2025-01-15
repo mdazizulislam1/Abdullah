@@ -320,7 +320,7 @@ function submitTask(taskId) {
 
     if (proofText && proofImage) {
         alert("Submitting proof...");
-        
+
         userData.pendingTasks.push(taskId);
         saveData();
 
@@ -335,7 +335,7 @@ function submitTask(taskId) {
         formData.append('photo', proofImage);
         formData.append('caption', `New Task Submitted:\nTask: ${tasks[taskId - 1].title}\nProof: ${proofText}`);
 
-        // Send proof (image + text) to Telegram
+        // Send proof (image + text) to Telegram in one request
         fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendPhoto`, {
             method: 'POST',
             body: formData
@@ -347,29 +347,6 @@ function submitTask(taskId) {
         .catch(err => {
             console.error(err);
         });
-
-        // Also send inline keyboard options for Confirm/Reject
-        const message = `New Task Submitted:\nTask: ${tasks[taskId - 1].title}\nProof: ${proofText}`;
-        
-        fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: '6633541228',
-                text: message,
-                reply_markup: {
-                    inline_keyboard: [
-                        [
-                            { text: "Confirm", callback_data: `confirm_${taskId}` },
-                            { text: "Reject", callback_data: `reject_${taskId}` }
-                        ]
-                    ]
-                }
-            })
-        })
-        .then(response => response.json())
-        .then(data => console.log(data))
-        .catch(err => console.error(err));
 
     } else {
         alert("Please provide both text and image proof.");
@@ -432,7 +409,7 @@ function rejectTask(taskId) {
     }
 }
 
-function submitWithdrawal() {
+        function submitWithdrawal() {
     const name = document.getElementById('withdrawName').value;
     const contact = document.getElementById('withdrawContact').value;
     const method = document.getElementById('withdrawMethod').value;
@@ -533,7 +510,7 @@ function trackReferral() {
     }
 }
 
-        // Display referral data in popup
+// Display referral data in popup
 function showReferralData() {
     const referralCount = Object.values(userData.referrals || {}).reduce((sum, count) => sum + count, 0);
     const referralEarnings = Math.floor(referralCount / 25);
