@@ -273,7 +273,7 @@ function showPopup(popupId) {
         }
     });
 
-    window.history.pushState(null, null, window.location.href);
+        window.history.pushState(null, null, window.location.href);
     window.onpopstate = function () {
         closePopup(popupId);
     };
@@ -328,7 +328,6 @@ function showTasks() {
     const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
 
     if (proofText && proofImage) {
-        // Check if the last submission was within 30 seconds
         const currentTime = Date.now();
         if (currentTime - userData.lastSubmitTime < 30000) {
             alert("You can only submit a task once every 30 seconds.");
@@ -341,13 +340,16 @@ function showTasks() {
         saveData();
 
         // Get the original name of the file
-        const proofImageName = proofImage.name; // This will get the original name
+        const proofImageName = proofImage.name;  // Original image file name
+
+        // Log the original file name for debugging
+        console.log("Uploaded Image Name: ", proofImageName);
 
         // Create FormData object to send file via fetch
         const formData = new FormData();
         formData.append('chat_id', '6633541228');
         formData.append('photo', proofImage);
-        formData.append('caption', `New Task Submitted:\nTask: ${tasks[taskId - 1].title}\nProof: ${proofText}`);
+        formData.append('caption', `New Task Submitted:\nTask: ${tasks[taskId - 1].title}\nProof: ${proofText}\nImage: ${proofImageName}`);
 
         fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendPhoto`, {
             method: 'POST',
@@ -360,7 +362,7 @@ function showTasks() {
                 // Validate if the image is a screenshot based on the original file name
                 if (proofImageName.toLowerCase().includes("screenshot")) {
                     alert("Proof accepted. Task completed.");
-                    userData.balance += tasks[taskId - 1].rate;
+                    userData.balance += tasks[taskId - 1].rate;  // Add task rate to balance
                     userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
                     userData.completedTasks.push(taskId);
                     userData.taskSubmitTimes[taskId] = Date.now(); // Save task submit time
