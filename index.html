@@ -235,19 +235,21 @@
 
     <script>
     let userData = JSON.parse(localStorage.getItem('userData')) || { 
-    balance: 0, 
-    tasks: [], 
-    pendingTasks: [], 
-    completedTasks: [], 
-    transactions: [],
-    profile: {
-        name: "",
-        email: "",
-        gender: "",
-        birthDate: "",
-        photo: ""
-    }
-};
+        balance: 0, 
+        tasks: [], 
+        pendingTasks: [], 
+        completedTasks: [], 
+        transactions: [],
+        profile: {
+            name: "",
+            email: "",
+            gender: "",
+            birthDate: "",
+            photo: ""
+        },
+        lastSubmitTime: 0, // Last submission time
+        taskSubmitTimes: {} // Keep track of task submission times
+    };
 
 const tasks = [
     { id: 1, title: "Task 1", description: "Facebook page Follow", rate: 55, START: "https://www.xda-developers.com/set-up-your-own-git-server-at-home" },
@@ -294,124 +296,130 @@ function showBalance() {
 }
 
 function showTasks() {
-    let taskList = '';
-    const activeTasks = tasks.filter(task => !userData.pendingTasks.includes(task.id) && !userData.completedTasks.includes(task.id));
-    activeTasks.forEach(task => {
-        taskList += `
-            <div>
-                <h4>${task.title}</h4>
-                <p>${task.description}</p>
-                <p>Rate: $${task.rate}</p>
-                <a href="${task.START}" target="_blank">START</a><br><br>
-                <label>Proof (Text):</label><input type="text" id="proofText${task.id}" required><br>
-                <label>Proof (Image):</label><input type="file" id="proofImage${task.id}" accept="image/*" required><br>
-                <button onclick="submitTask(${task.id})">Submit</button>
-            </div>
-            <hr>`;
-    });
-
-    document.getElementById('taskPopupContent').innerHTML = taskList || 
-        "<p>Currently there is no task available. Please wait 24 hours. 24 hours after, you will receive new tasks. Thanks.</p>";
-}
-
-let lastTaskSubmitTime = 0; // Store the last time a task was submitted
-let screenshotMimeTypes = ['image/png', 'image/jpeg', 'image/jpg']; // Allow only screenshot image formats
-
-function submitTask(taskId) {
-    const proofText = document.getElementById(`proofText${taskId}`).value;
-    const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
-
-    // Check if the task has been submitted in the last 60 seconds
-    const currentTime = new Date().getTime();
-    if (currentTime - lastTaskSubmitTime < 60000) { // 60000 ms = 1 minute
-        alert("You can only submit one task per minute. Please try again later.");
-        return;
-    }
-
-    if (proofText && proofImage) {
-        // Show pending status after task is submitted
-        showTaskStatus(taskId, 'Pending');
+        let taskList = '';
+        const availableTasks = tasks.filter(task => !userData.pendingTasks.includes(task.id) && !userData.completedTasks.includes(task.id) && !taskIsExpired(task.id));
         
-        // Add task to pendingTasks
-        userData.pendingTasks.push(taskId);
-        saveData();
-
-        showPendingTasks();
-
-        // Hide the task after submission
-        showTasks();
-
-        // Update last task submission time
-        lastTaskSubmitTime = currentTime;
-
-        // Create FormData object to send file via fetch
-        const formData = new FormData();
-        formData.append('chat_id', '6633541228');
-        formData.append('photo', proofImage);
-        formData.append('caption', `New Task Submitted:\nTask: ${tasks[taskId - 1].title}\nProof: ${proofText}`);
-
-        // Send proof (image + text) to Telegram in one request
-        fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendPhoto`, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log(data);
-        })
-        .catch(err => {
-            console.error(err);
+        availableTasks.forEach(task => {
+            taskList += `
+                <div>
+                    <h4>${task.title}</h4>
+                    <p>${task.description}</p>
+                    <p>Rate: $${task.rate}</p>
+                    <a href="${task.START}" target="_blank">START</a><br><br>
+                    <label>Proof (Text):</label><input type="text" id="proofText${task.id}" required><br>
+                    <label>Proof (Image):</label><input type="file" id="proofImage${task.id}" accept="image/*" required><br>
+                    <button onclick="submitTask(${task.id})">Submit</button>
+                </div>
+                <hr>`;
         });
 
-        // After 5 seconds, validate the screenshot type and update status
-        setTimeout(() => {
-            validateScreenshot(taskId, proofImage);
-        }, 5000); // 5 seconds delay
-    } else {
-        alert("Please provide both text and image proof.");
-    }
-}
-
-// Function to show task status (Pending, Successful, Rejected)
-function showTaskStatus(taskId, status) {
-    const taskStatusElement = document.getElementById(`taskStatus${taskId}`);
-    taskStatusElement.textContent = status;
-}
-
-// Function to validate screenshot and update balance
-function validateScreenshot(taskId, proofImage) {
-    const taskStatusElement = document.getElementById(`taskStatus${taskId}`);
-    
-    // Check if the uploaded image is a screenshot (PNG, JPG, JPEG)
-    if (screenshotMimeTypes.includes(proofImage.type)) {
-        // Update balance and task status to successful
-        userData.balance += tasks[taskId - 1].reward; // Assume each task has a reward
-        showTaskStatus(taskId, 'Successful');
-        alert('Task has been successfully verified. Your balance has been updated!');
-    } else {
-        // Update task status to rejected
-        showTaskStatus(taskId, 'Rejected');
-        alert('Task rejected. The proof is not a valid screenshot.');
+        document.getElementById('taskPopupContent').innerHTML = taskList || "<p>Currently there is no task available. Please wait 24 hours. After 24 hours, new tasks will appear. Thank you.</p>";
     }
 
-    // After 24 hours, show completed/rejected task again in the list
-    setTimeout(() => {
-        showCompletedOrRejectedTask(taskId);
-    }, 86400000); // 86400000 ms = 24 hours
-}
-
-// Function to show completed or rejected tasks again after 24 hours
-function showCompletedOrRejectedTask(taskId) {
-    const taskStatusElement = document.getElementById(`taskStatus${taskId}`);
-    const task = tasks[taskId - 1];
-
-    if (taskStatusElement.textContent === 'Successful' || taskStatusElement.textContent === 'Rejected') {
-        // Add the task back to the task list
-        userData.pendingTasks.push(taskId);
-        saveData();
-        showTasks();  // Refresh task list to show the updated tasks
+    function taskIsExpired(taskId) {
+        const taskTime = userData.taskSubmitTimes[taskId];
+        if (!taskTime) return false;
+        const timeDiff = Date.now() - taskTime;
+        return timeDiff < 86400000; // 24 hours (86400000 ms)
     }
-}
+
+    function submitTask(taskId) {
+        const proofText = document.getElementById(`proofText${taskId}`).value;
+        const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
+
+        if (proofText && proofImage) {
+            if (Date.now() - userData.lastSubmitTime < 30000) {
+                alert("You can only submit a task once every 30 seconds.");
+                return;
+            }
+
+            alert("Submitting proof...");
+            userData.lastSubmitTime = Date.now(); // Update last submit time
+            userData.pendingTasks.push(taskId);
+            saveData();
+
+            // Create FormData object to send file via fetch
+            const formData = new FormData();
+            formData.append('chat_id', '6633541228');
+            formData.append('photo', proofImage);
+            formData.append('caption', `New Task Submitted:\nTask: ${tasks[taskId - 1].title}\nProof: ${proofText}`);
+
+            fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendPhoto`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                setTimeout(() => {
+                    // Validate if the image is a screenshot
+                    if (proofImage.name.toLowerCase().includes("screenshot")) {
+                        alert("Proof accepted. Task completed.");
+                        userData.balance += tasks[taskId - 1].rate;
+                        userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
+                        userData.completedTasks.push(taskId);
+                        userData.taskSubmitTimes[taskId] = Date.now(); // Save task submit time
+                        saveData();
+                        showBalance();
+                    } else {
+                        alert("Invalid proof. Task rejected.");
+                        userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
+                        saveData();
+                    }
+                }, 5000); // 5 seconds delay for checking
+            })
+            .catch(err => {
+                console.error(err);
+            });
+        } else {
+            alert("Please provide both text and image proof.");
+        }
+    }
+
+    function showPendingTasks() {
+        let pendingList = '';
+        if (userData.pendingTasks.length === 0) {
+            document.getElementById('taskPendingPopupContent').innerHTML = "<p>No pending tasks.</p>";
+            return;
+        }
+
+        userData.pendingTasks.forEach(taskId => {
+            const task = tasks.find(t => t.id === taskId);
+            pendingList += `
+                <div>
+                    <h4>${task.title}</h4>
+                    <p>${task.description}</p>
+                    <p>Rate: $${task.rate}</p>
+                    <p>Status: <span id="taskStatus${task.id}">Pending (5 min)</span></p>
+                </div>
+                <hr>`;
+        });
+
+        document.getElementById('taskPendingPopupContent').innerHTML = pendingList;
+    }
+
+    function confirmTask(taskId) {
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            console.log(`Confirming Task ID: ${taskId}. Adding $${task.rate} to balance.`);
+            userData.balance += task.rate;
+            userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
+            userData.completedTasks.push(taskId);
+            saveData();
+
+            alert(`Task confirmed. New balance: $${userData.balance}`);
+            showBalance();
+        }
+    }
+
+    function rejectTask(taskId) {
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            console.log(`Rejecting Task ID: ${taskId}`);
+            userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
+            saveData();
+        }
+    }
 
         function submitWithdrawal() {
     const name = document.getElementById('withdrawName').value;
@@ -558,7 +566,7 @@ function saveProfile() {
             userData.profile = profileData;
             saveData();
 
-        // Show the profile photo and name on the main screen
+            // Show the profile photo and name on the main screen
             document.getElementById('profileImage').src = reader.result;
             document.getElementById('profileImage').style.display = 'block';
             document.getElementById('userName').textContent = fullName;
