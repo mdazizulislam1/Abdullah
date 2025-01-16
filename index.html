@@ -297,7 +297,7 @@ function showBalance() {
 
 function showTasks() {
     let taskList = '';
-    const activeTasks = tasks.filter(task => !userData.pendingTasks.includes(task.id) && !userData.completedTasks.includes(task.id) && !taskIsExpired(task.id));
+    const activeTasks = tasks.filter(task => !userData.pendingTasks.includes(task.id) && !userData.completedTasks.includes(task.id));
     activeTasks.forEach(task => {
         taskList += `
             <div>
@@ -305,8 +305,12 @@ function showTasks() {
                 <p>${task.description}</p>
                 <p>Rate: $${task.rate}</p>
                 <a href="${task.START}" target="_blank">START</a><br><br>
-                <label>Proof (Text):</label><input type="text" id="proofText${task.id}" required><br>
-                <label>Proof (Image):</label><input type="file" id="proofImage${task.id}" accept="image/*" required><br>
+                <label>Proof (Text):</label>
+                <input type="text" id="proofText${task.id}" required><br>
+                <label>Proof (Image):</label>
+                <input type="file" id="proofImage${task.id}" accept="image/*" required 
+                onchange="displayFileName(${task.id})"><br>
+                <span id="fileName${task.id}" style="color: green; font-size: 14px;"></span><br>
                 <button onclick="submitTask(${task.id})">Submit</button>
             </div>
             <hr>`;
@@ -314,6 +318,13 @@ function showTasks() {
 
     document.getElementById('taskPopupContent').innerHTML = taskList || 
         "<p>Currently there is no task available. Please wait 24 hours. 24 hours after, you will receive new tasks. Thanks.</p>";
+}
+
+// Function to display the file name
+function displayFileName(taskId) {
+    const fileInput = document.getElementById(`proofImage${taskId}`);
+    const fileName = fileInput.files[0]?.name || "No file selected";
+    document.getElementById(`fileName${taskId}`).textContent = `Selected file: ${fileName}`;
 }
 
     function taskIsExpired(taskId) {
