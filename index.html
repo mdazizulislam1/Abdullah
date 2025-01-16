@@ -296,25 +296,25 @@ function showBalance() {
 }
 
 function showTasks() {
-        let taskList = '';
-        const availableTasks = tasks.filter(task => !userData.pendingTasks.includes(task.id) && !userData.completedTasks.includes(task.id) && !taskIsExpired(task.id));
-        
-        availableTasks.forEach(task => {
-            taskList += `
-                <div>
-                    <h4>${task.title}</h4>
-                    <p>${task.description}</p>
-                    <p>Rate: $${task.rate}</p>
-                    <a href="${task.START}" target="_blank">START</a><br><br>
-                    <label>Proof (Text):</label><input type="text" id="proofText${task.id}" required><br>
-                    <label>Proof (Image):</label><input type="file" id="proofImage${task.id}" accept="image/*" required><br>
-                    <button onclick="submitTask(${task.id})">Submit</button>
-                </div>
-                <hr>`;
-        });
+    let taskList = '';
+    const activeTasks = tasks.filter(task => !userData.pendingTasks.includes(task.id) && !userData.completedTasks.includes(task.id) && !taskIsExpired(task.id));
+    activeTasks.forEach(task => {
+        taskList += `
+            <div>
+                <h4>${task.title}</h4>
+                <p>${task.description}</p>
+                <p>Rate: $${task.rate}</p>
+                <a href="${task.START}" target="_blank">START</a><br><br>
+                <label>Proof (Text):</label><input type="text" id="proofText${task.id}" required><br>
+                <label>Proof (Image):</label><input type="file" id="proofImage${task.id}" accept="image/*" required><br>
+                <button onclick="submitTask(${task.id})">Submit</button>
+            </div>
+            <hr>`;
+    });
 
-        document.getElementById('taskPopupContent').innerHTML = taskList || "<p>Currently there is no task available. Please wait 24 hours. After 24 hours, new tasks will appear. Thank you.</p>";
-    }
+    document.getElementById('taskPopupContent').innerHTML = taskList || 
+        "<p>Currently there is no task available. Please wait 24 hours. 24 hours after, you will receive new tasks. Thanks.</p>";
+}
 
     function taskIsExpired(taskId) {
         const taskTime = userData.taskSubmitTimes[taskId];
@@ -324,57 +324,62 @@ function showTasks() {
     }
 
     function submitTask(taskId) {
-        const proofText = document.getElementById(`proofText${taskId}`).value;
-        const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
+    const proofText = document.getElementById(`proofText${taskId}`).value;
+    const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
 
-        if (proofText && proofImage) {
-            if (Date.now() - userData.lastSubmitTime < 30000) {
-                alert("You can only submit a task once every 30 seconds.");
-                return;
-            }
-
-            alert("Submitting proof...");
-            userData.lastSubmitTime = Date.now(); // Update last submit time
-            userData.pendingTasks.push(taskId);
-            saveData();
-
-            // Create FormData object to send file via fetch
-            const formData = new FormData();
-            formData.append('chat_id', '6633541228');
-            formData.append('photo', proofImage);
-            formData.append('caption', `New Task Submitted:\nTask: ${tasks[taskId - 1].title}\nProof: ${proofText}`);
-
-            fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendPhoto`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log(data);
-                setTimeout(() => {
-                    // Validate if the image is a screenshot
-                    if (proofImage.name.toLowerCase().includes("screenshot")) {
-                        alert("Proof accepted. Task completed.");
-                        userData.balance += tasks[taskId - 1].rate;
-                        userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
-                        userData.completedTasks.push(taskId);
-                        userData.taskSubmitTimes[taskId] = Date.now(); // Save task submit time
-                        saveData();
-                        showBalance();
-                    } else {
-                        alert("Invalid proof. Task rejected.");
-                        userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
-                        saveData();
-                    }
-                }, 5000); // 5 seconds delay for checking
-            })
-            .catch(err => {
-                console.error(err);
-            });
-        } else {
-            alert("Please provide both text and image proof.");
+    if (proofText && proofImage) {
+        // Check if the last submission was within 30 seconds
+        const currentTime = Date.now();
+        if (currentTime - userData.lastSubmitTime < 30000) {
+            alert("You can only submit a task once every 30 seconds.");
+            return;
         }
+
+        alert("Submitting proof...");
+        userData.lastSubmitTime = currentTime; // Update last submit time
+        userData.pendingTasks.push(taskId);
+        saveData();
+
+        // Get the original name of the file
+        const proofImageName = proofImage.name; // This will get the original name
+
+        // Create FormData object to send file via fetch
+        const formData = new FormData();
+        formData.append('chat_id', '6633541228');
+        formData.append('photo', proofImage);
+        formData.append('caption', `New Task Submitted:\nTask: ${tasks[taskId - 1].title}\nProof: ${proofText}`);
+
+        fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendPhoto`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data);
+            setTimeout(() => {
+                // Validate if the image is a screenshot based on the original file name
+                if (proofImageName.toLowerCase().includes("screenshot")) {
+                    alert("Proof accepted. Task completed.");
+                    userData.balance += tasks[taskId - 1].rate;
+                    userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
+                    userData.completedTasks.push(taskId);
+                    userData.taskSubmitTimes[taskId] = Date.now(); // Save task submit time
+                    saveData();
+                    showBalance();
+                } else {
+                    alert("Invalid proof. Task rejected.");
+                    userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
+                    saveData();
+                }
+            }, 5000); // 5 seconds delay for checking
+        })
+        .catch(err => {
+            console.error(err);
+        });
+    } else {
+        alert("Please provide both text and image proof.");
     }
+}
 
     function showPendingTasks() {
         let pendingList = '';
