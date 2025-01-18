@@ -240,6 +240,7 @@
         pendingTasks: [], 
         completedTasks: [], 
         transactions: [],
+        lastSubmitTime: 0,  // Last task submit time for 30 second rule
         taskTimers: {}, // For tracking task timers
         profile: {
             name: "",
@@ -333,11 +334,11 @@ function showTasks() {
         return;
     }
 
-    const lastSubmitTime = userData.taskTimers[taskId]?.submitted || 0;
-    if (Date.now() - lastSubmitTime < 30 * 1000) { // 30-second cooldown
-        alert("You can submit a new task only after 30 seconds.");
-        return;
-    }
+    // Check if 30 seconds have passed since last submit
+        if (currentTime - userData.lastSubmitTime < 30000) {
+            alert("Please wait 30 seconds before submitting another task.");
+            return;
+        }
 
     // Update timers and move task to pending
     userData.taskTimers[taskId] = { submitted: Date.now() };
