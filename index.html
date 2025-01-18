@@ -377,6 +377,7 @@ function submitTask(taskId) {
 
         // Check after 5 seconds
         setTimeout(() => {
+            console.log("Checking task proof after 5 seconds"); // Debugging log
             checkTaskProof(taskId);
         }, 5000);
     } else {
@@ -385,11 +386,15 @@ function submitTask(taskId) {
 }
 
 function checkTaskProof(taskId) {
+    console.log("Checking proof for task ID:", taskId);  // Debugging log
     const task = userData.pendingTasks.find(t => t === taskId);
 
     if (task) {
         const proofText = document.getElementById(`proofText${taskId}`).value;
         const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
+
+        console.log("Proof Text:", proofText);  // Debugging log
+        console.log("Proof Image:", proofImage);  // Debugging log
 
         const isTextValid = proofText.includes("@gmail.com");
         const isImageValid = proofImage && proofImage.size <= 2 * 1024 * 1024; // Check image size <= 2MB
@@ -422,7 +427,7 @@ function showPendingTasks() {
     document.getElementById('taskPendingPopupContent').innerHTML = pendingList || "<p>No pending tasks.</p>";
 }
 
-function confirmTask(taskId) {
+        function confirmTask(taskId) {
     const task = tasks.find(t => t.id === taskId);
     if (task) {
         console.log(`Confirming Task ID: ${taskId}. Adding $${task.rate} to balance.`);
@@ -436,7 +441,7 @@ function confirmTask(taskId) {
     }
 }
 
-        function rejectTask(taskId) {
+function rejectTask(taskId) {
     const task = tasks.find(t => t.id === taskId);
     if (task) {
         console.log(`Rejecting Task ID: ${taskId}`);
@@ -456,9 +461,10 @@ setInterval(() => {
         userData.lastSubmitTime = now;
         saveData();
         showTasks();
+        alert("Tasks have been reset after 24 hours.");
     }
-}
-            
+}, 1000);
+
         function submitWithdrawal() {
     const name = document.getElementById('withdrawName').value;
     const contact = document.getElementById('withdrawContact').value;
