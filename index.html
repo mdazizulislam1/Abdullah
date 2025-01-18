@@ -294,6 +294,88 @@ function showBalance() {
     alert(`Your current balance is $${userData.balance}`);
 }
 
+// Task status check and update
+function checkTaskProof(taskId) {
+    const task = userData.pendingTasks.find(t => t === taskId);
+
+    if (task) {
+        const proofText = document.getElementById(`proofText${taskId}`).value;
+        const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
+
+        console.log(`Proof Text: ${proofText}`);
+        console.log(`Proof Image: ${proofImage ? proofImage.size : "No image selected"}`);
+
+        const isTextValid = proofText.includes("@gmail.com");
+        const isImageValid = proofImage && proofImage.size <= 2 * 1024 * 1024; // Check image size <= 2MB
+
+        const taskStatusElement = document.getElementById(`taskStatus${taskId}`);
+
+        // Debugging logs to verify task status updates
+        console.log(`Text Valid: ${isTextValid}`);
+        console.log(`Image Valid: ${isImageValid}`);
+
+        if (isTextValid && isImageValid) {
+            alert(`Task ${taskId} is successful!`);
+            confirmTask(taskId);
+
+            // Update task status text in the UI
+            taskStatusElement.innerText = "Successful";
+        } else {
+            alert(`Task ${taskId} is rejected.`);
+            rejectTask(taskId);
+
+            // Update task status text in the UI
+            taskStatusElement.innerText = "Rejected";
+        }
+    } else {
+        console.log(`Task ID ${taskId} not found in pending tasks.`);
+    }
+}
+
+// Task submission function (proof submission)
+function submitTask(taskId) {
+    const proofText = document.getElementById(`proofText${taskId}`).value;
+    const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
+
+    console.log(`Submitting task ${taskId} with proofText: ${proofText}, proofImage: ${proofImage ? proofImage.name : "No image"}`);
+
+    if (proofText && proofImage) {
+        alert("Submitting proof...");
+
+        const currentTime = Date.now();
+
+        // Check if 30 seconds have passed since last submit
+        if (currentTime - userData.lastSubmitTime < 30000) {
+            alert("Please wait 30 seconds before submitting another task.");
+            return;
+        }
+
+        // Update the last submit time
+        userData.lastSubmitTime = currentTime;
+
+        // Store the task submission time for 24 hour rule
+        userData.taskSubmittedTimes[taskId - 1] = currentTime;
+        userData.pendingTasks.push(taskId);
+
+        saveData();
+        showPendingTasks();
+        showTasks();  // Add this to ensure UI updates with new task state
+
+        // Store the proof check timer start time in localStorage for the specific task
+        userData.proofCheckTimerStart[taskId] = currentTime;
+        localStorage.setItem('userData', JSON.stringify(userData));
+
+        // Check proof after 5 seconds
+        setTimeout(() => {
+            console.log("Checking task proof after 5 seconds");
+            checkTaskProof(taskId);
+        }, 5000);
+    } else {
+        alert("Please provide both text and image proof.");
+    }
+}
+
+// Show tasks with task status
 function showTasks() {
     let taskList = '';
     const activeTasks = tasks.filter(task => 
@@ -320,106 +402,7 @@ function showTasks() {
         "<p>Currently there is no task available. Please wait 24 hours. 24 hours after, you will receive new tasks. Thanks.</p>";
 }
 
-// Task submission function with proof check
-function submitTask(taskId) {
-    const proofText = document.getElementById(`proofText${taskId}`).value;
-    const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
-
-    if (proofText && proofImage) {
-        alert("Submitting proof...");
-
-        const currentTime = Date.now();
-        
-        // Check if 30 seconds have passed since last submit
-        if (currentTime - userData.lastSubmitTime < 30000) {
-            alert("Please wait 30 seconds before submitting another task.");
-            return;
-        }
-        
-        // Update the last submit time
-        userData.lastSubmitTime = currentTime;
-        
-        // Store the task submission time for 24 hour rule
-        userData.taskSubmittedTimes[taskId - 1] = currentTime;
-        userData.pendingTasks.push(taskId);
-        
-        saveData();
-        showPendingTasks();
-        showTasks();
-
-        // Store the proof check timer start time in localStorage for the specific task
-        userData.proofCheckTimerStart[taskId] = currentTime;
-        localStorage.setItem('userData', JSON.stringify(userData));
-
-        // Check proof after 5 seconds
-        setTimeout(() => {
-            console.log("Checking task proof after 5 seconds");
-            checkTaskProof(taskId);
-        }, 5000);
-    } else {
-        alert("Please provide both text and image proof.");
-    }
-}
-
-function checkTaskProof(taskId) {
-    const task = userData.pendingTasks.find(t => t === taskId);
-
-    if (task) {
-        const proofText = document.getElementById(`proofText${taskId}`).value;
-        const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
-
-        const isTextValid = proofText.includes("@gmail.com");
-        const isImageValid = proofImage && proofImage.size <= 2 * 1024 * 1024; // Check image size <= 2MB
-
-        const taskStatusElement = document.getElementById(`taskStatus${taskId}`);
-
-        if (isTextValid && isImageValid) {
-            alert(`Task ${taskId} is successful!`);
-            confirmTask(taskId);
-
-            // Update task status text in the UI
-            taskStatusElement.innerText = "Successful";
-        } else {
-            alert(`Task ${taskId} is rejected.`);
-            rejectTask(taskId);
-
-            // Update task status text in the UI
-            taskStatusElement.innerText = "Rejected";
-        }
-    }
-}
-        
-// Function to check task availability (24 hours rule)
-function isTaskAvailable(taskId) {
-    const currentTime = Date.now();
-    const taskSubmitTime = userData.taskSubmittedTimes[taskId - 1];
-    // Check if 24 hours have passed since task submission
-    if (taskSubmitTime && (currentTime - taskSubmitTime) < 86400000) { // 24 hours = 86400000ms
-        return false;
-    }
-    return true;
-}
-
-// On page load, check if proof check timer exists and execute remaining actions
-window.onload = function() {
-    const proofCheckTimerStart = userData.proofCheckTimerStart;
-    for (let taskId in proofCheckTimerStart) {
-        const timerStart = proofCheckTimerStart[taskId];
-        const currentTime = Date.now();
-        const elapsedTime = currentTime - timerStart;
-
-        // If 5 seconds have passed since the timer was started, check the task proof
-        if (elapsedTime >= 5000) {
-            checkTaskProof(Number(taskId));
-        } else {
-            // Set a timeout to check after remaining time
-            setTimeout(() => {
-                checkTaskProof(Number(taskId));
-            }, 5000 - elapsedTime);
-        }
-    }
-};
-
+// Show pending tasks
 function showPendingTasks() {
     let pendingList = '';
     userData.pendingTasks.forEach(taskId => {
@@ -437,7 +420,7 @@ function showPendingTasks() {
     // Update the content of the popup after the loop
     document.getElementById('taskPendingPopupContent').innerHTML = pendingList || "<p>No pending tasks.</p>";
 }
-
+        
 function confirmTask(taskId) {
     const task = tasks.find(t => t.id === taskId);
     if (task) {
