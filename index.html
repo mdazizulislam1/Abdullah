@@ -456,11 +456,9 @@ setInterval(() => {
         userData.lastSubmitTime = now;
         saveData();
         showTasks();
-        alert("Tasks have been reset after 24 hours.");
     }
-}, 1000);
-
-
+}
+            
         function submitWithdrawal() {
     const name = document.getElementById('withdrawName').value;
     const contact = document.getElementById('withdrawContact').value;
