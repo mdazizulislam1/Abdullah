@@ -361,9 +361,9 @@ function submitTask(taskId) {
 }
 
 function checkTaskProof(taskId) {
-    const taskIndex = userData.pendingTasks.indexOf(taskId);
+    const task = userData.pendingTasks.find(t => t === taskId);
 
-    if (taskIndex !== -1) {
+    if (task) {
         const proofText = document.getElementById(`proofText${taskId}`).value;
         const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
 
@@ -372,10 +372,17 @@ function checkTaskProof(taskId) {
 
         if (isTextValid && isImageValid) {
             alert(`Task ${taskId} is successful!`);
-            confirmTask(taskId); // Confirm the task and update status
+            confirmTask(taskId);
+
+            // Update task status to successful
+            document.getElementById(`taskStatus${taskId}`).innerText = "Successful";
+
         } else {
             alert(`Task ${taskId} is rejected.`);
-            rejectTask(taskId); // Reject the task and update status
+            rejectTask(taskId);
+
+            // Update task status to rejected
+            document.getElementById(`taskStatus${taskId}`).innerText = "Rejected";
         }
     }
 }
@@ -436,7 +443,7 @@ function confirmTask(taskId) {
         userData.balance += task.rate;
         userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
         userData.completedTasks.push(taskId);
-        saveData(); // Save updated data to localStorage
+        saveData();
 
         alert(`Task confirmed. New balance: $${userData.balance}`);
         showBalance();
@@ -448,7 +455,7 @@ function rejectTask(taskId) {
     if (task) {
         console.log(`Rejecting Task ID: ${taskId}`);
         userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
-        saveData(); // Save updated data to localStorage
+        saveData();
     }
 }
 
