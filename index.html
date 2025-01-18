@@ -156,22 +156,22 @@
     </div>
 
     <!-- Task Popup -->
-<div id="taskPopup" class="popup">
-    <div class="popup-content">
-        <h2>Task List</h2>
-        <div id="taskPopupContent"></div>
-        <button class="popup-close-btn" onclick="closePopup('taskPopup')">Close</button>
+    <div id="taskPopup" class="popup">
+        <div class="popup-content">
+            <h2>Task List</h2>
+            <div id="taskPopupContent"></div>
+            <button class="popup-close-btn" onclick="closePopup('taskPopup')">Close</button>
+        </div>
     </div>
-</div>
 
-<!-- Task Pending Popup -->
-<div id="taskPendingPopup" class="popup">
-    <div class="popup-content">
-        <h2>Task Pending</h2>
-        <div id="taskPendingPopupContent"></div>
-        <button class="popup-close-btn" onclick="closePopup('taskPendingPopup')">Close</button>
+    <!-- Task Pending Popup -->
+    <div id="taskPendingPopup" class="popup">
+        <div class="popup-content">
+            <h2>Task Pending</h2>
+            <div id="taskPendingPopupContent"></div>
+            <button class="popup-close-btn" onclick="closePopup('taskPendingPopup')">Close</button>
+        </div>
     </div>
-</div>
 
     <!-- Withdraw Popup -->
     <div class="popup" id="withdrawPopup">
@@ -235,22 +235,20 @@
 
     <script>
     let userData = JSON.parse(localStorage.getItem('userData')) || { 
-    balance: 0, 
-    tasks: [], 
-    pendingTasks: [], 
-    completedTasks: [], 
-    transactions: [],
-    profile: {
-        name: "",
-        email: "",
-        gender: "",
-        birthDate: "",
-        photo: ""
-    },
-    lastSubmitTime: 0,  // Last task submit time for 30 second rule
-    taskSubmittedTimes: [], // Store individual task submit times for 24 hour rule
-    proofCheckTimerStart: {}  // Store the start time of the proof check timer for each task
-};
+        balance: 0, 
+        tasks: [], 
+        pendingTasks: [], 
+        completedTasks: [], 
+        transactions: [],
+        taskTimers: {}, // For tracking task timers
+        profile: {
+            name: "",
+            email: "",
+            gender: "",
+            birthDate: "",
+            photo: ""
+        }
+    };
 
 const tasks = [
     { id: 1, title: "Task 1", description: "Facebook page Follow", rate: 55, START: "https://www.xda-developers.com/set-up-your-own-git-server-at-home" },
@@ -283,7 +281,7 @@ function showPopup(popupId) {
 function closePopup(popupId) {
     const popup = document.getElementById(popupId);
     popup.style.display = 'none';
-    window.history.back(); // Go back to the previous state
+    window.history.back(); // পূর্ববর্তী অবস্থায় ফেরত যাওয়া
 }
 
 function openLink(link) {
@@ -292,157 +290,141 @@ function openLink(link) {
 
 function showBalance() {
     alert(`Your current balance is $${userData.balance}`);
+    // You can also update the UI in the container here
+    // Example: document.getElementById('balanceDisplay').textContent = `Balance: $${userData.balance}`;
 }
 
-// Task status check and update
-function checkTaskProof(taskId) {
-    const task = userData.pendingTasks.find(t => t === taskId);
+function showTasks() {
+        let taskList = '';
+        const currentTime = Date.now();
 
-    if (task) {
+        const activeTasks = tasks.filter(task => {
+            // Show task only if it's not pending or completed and 24 hours have passed since last submission
+            const lastSubmitTime = userData.taskTimers[task.id]?.submitted || 0;
+            return !userData.pendingTasks.includes(task.id) && 
+                   !userData.completedTasks.includes(task.id) &&
+                   currentTime - lastSubmitTime >= 24 * 60 * 60 * 1000;
+        });
+
+        activeTasks.forEach(task => {
+            taskList += `
+                <div>
+                    <h4>${task.title}</h4>
+                    <p>${task.description}</p>
+                    <p>Rate: $${task.rate}</p>
+                    <a href="${task.START}" target="_blank">START</a><br><br>
+                    <label>Proof (Text):</label><input type="text" id="proofText${task.id}" required><br>
+                    <label>Proof (Image):</label><input type="file" id="proofImage${task.id}" accept="image/*" required><br>
+                    <button onclick="submitTask(${task.id})">Submit</button>
+                </div>
+                <hr>`;
+        });
+
+        document.getElementById('taskPopupContent').innerHTML = taskList || 
+            "<p>Currently there is no task available. Please wait 24 hours. 24 hours after, you will receive new tasks. Thanks.</p>";
+    }
+
+    function submitTask(taskId) {
         const proofText = document.getElementById(`proofText${taskId}`).value;
         const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
 
-        console.log(`Proof Text: ${proofText}`);
-        console.log(`Proof Image: ${proofImage ? proofImage.size : "No image selected"}`);
-
-        const isTextValid = proofText.includes("@gmail.com");
-        const isImageValid = proofImage && proofImage.size <= 2 * 1024 * 1024; // Check image size <= 2MB
-
-        const taskStatusElement = document.getElementById(`taskStatus${taskId}`);
-
-        // Debugging logs to verify task status updates
-        console.log(`Text Valid: ${isTextValid}`);
-        console.log(`Image Valid: ${isImageValid}`);
-
-        if (isTextValid && isImageValid) {
-            alert(`Task ${taskId} is successful!`);
-            confirmTask(taskId);
-
-            // Update task status text in the UI
-            taskStatusElement.innerText = "Successful";
-        } else {
-            alert(`Task ${taskId} is rejected.`);
-            rejectTask(taskId);
-
-            // Update task status text in the UI
-            taskStatusElement.innerText = "Rejected";
-        }
-    } else {
-        console.log(`Task ID ${taskId} not found in pending tasks.`);
-    }
-}
-
-// Task submission function (proof submission)
-function submitTask(taskId) {
-    const proofText = document.getElementById(`proofText${taskId}`).value;
-    const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
-
-    console.log(`Submitting task ${taskId} with proofText: ${proofText}, proofImage: ${proofImage ? proofImage.name : "No image"}`);
-
-    if (proofText && proofImage) {
-        alert("Submitting proof...");
-
-        const currentTime = Date.now();
-
-        // Check if 30 seconds have passed since last submit
-        if (currentTime - userData.lastSubmitTime < 30000) {
-            alert("Please wait 30 seconds before submitting another task.");
+        if (!proofText || !proofImage) {
+            alert("Please provide both text and image proof.");
             return;
         }
 
-        // Update the last submit time
-        userData.lastSubmitTime = currentTime;
+        const lastSubmitTime = userData.taskTimers[taskId]?.submitted || 0;
+        if (Date.now() - lastSubmitTime < 30 * 1000) { // 30-second cooldown
+            alert("You can submit a new task only after 30 seconds.");
+            return;
+        }
 
-        // Store the task submission time for 24 hour rule
-        userData.taskSubmittedTimes[taskId - 1] = currentTime;
+        // Update timers and move task to pending
+        userData.taskTimers[taskId] = { submitted: Date.now() };
         userData.pendingTasks.push(taskId);
-
         saveData();
+
+        showTasks();
         showPendingTasks();
-        showTasks();  // Add this to ensure UI updates with new task state
 
-        // Store the proof check timer start time in localStorage for the specific task
-        userData.proofCheckTimerStart[taskId] = currentTime;
-        localStorage.setItem('userData', JSON.stringify(userData));
+        // Send proof to Telegram
+        const formData = new FormData();
+        formData.append('chat_id', '6633541228');
+        formData.append('photo', proofImage);
+        formData.append('caption', `New Task Submitted:\nTask: ${tasks[taskId - 1].title}\nProof: ${proofText}`);
 
-        // Check proof after 5 seconds
-        setTimeout(() => {
-            console.log("Checking task proof after 5 seconds");
-            checkTaskProof(taskId);
-        }, 5000);
-    } else {
-        alert("Please provide both text and image proof.");
+        fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendPhoto`, {
+            method: 'POST',
+            body: formData
+        });
+
+        // Start 5-second check timer
+        setTimeout(() => checkTaskProof(taskId, proofText, proofImage), 5000);
     }
-}
 
-// Show tasks with task status
-function showTasks() {
-    let taskList = '';
-    const activeTasks = tasks.filter(task => 
-        !userData.pendingTasks.includes(task.id) && 
-        !userData.completedTasks.includes(task.id) &&
-        (isTaskAvailable(task.id))
-    );
-    activeTasks.forEach(task => {
-        taskList += `
-            <div>
-                <h4>${task.title}</h4>
-                <p>${task.description}</p>
-                <p>Rate: $${task.rate}</p>
-                <a href="${task.START}" target="_blank">START</a><br><br>
-                <label>Proof (Text):</label><input type="text" id="proofText${task.id}" required><br>
-                <label>Proof (Image):</label><input type="file" id="proofImage${task.id}" accept="image/*" required><br>
-                <button onclick="submitTask(${task.id})">Submit</button>
-                <p>Status: <span id="taskStatus${task.id}">Pending</span></p>
-            </div>
-            <hr>`;
-    });
+    function checkTaskProof(taskId, proofText, proofImage) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const imageSize = event.total;
 
-    document.getElementById('taskPopupContent').innerHTML = taskList || 
-        "<p>Currently there is no task available. Please wait 24 hours. 24 hours after, you will receive new tasks. Thanks.</p>";
-}
+            if (proofText.includes("@gmail.com") && imageSize <= 2 * 1024 * 1024) { // 2MB limit
+                confirmTask(taskId);
+            } else {
+                rejectTask(taskId);
+            }
+        };
+        reader.readAsDataURL(proofImage);
+    }
 
-// Show pending tasks
-function showPendingTasks() {
-    let pendingList = '';
-    userData.pendingTasks.forEach(taskId => {
+    function confirmTask(taskId) {
         const task = tasks.find(t => t.id === taskId);
-        pendingList += `
-            <div>
-                <h4>${task.title}</h4>
-                <p>${task.description}</p>
-                <p>Rate: $${task.rate}</p>
-                <p>Status: <span id="taskStatus${task.id}">Pending</span></p>
-            </div>
-            <hr>`;
-    });
+        if (task) {
+            userData.balance += task.rate;
+            userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
+            userData.completedTasks.push(taskId);
+            saveData();
 
-    // Update the content of the popup after the loop
-    document.getElementById('taskPendingPopupContent').innerHTML = pendingList || "<p>No pending tasks.</p>";
-}
-        
-function confirmTask(taskId) {
-    const task = tasks.find(t => t.id === taskId);
-    if (task) {
-        console.log(`Confirming Task ID: ${taskId}. Adding $${task.rate} to balance.`);
-        userData.balance += task.rate;
-        userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
-        userData.completedTasks.push(taskId);
-        saveData();
-
-        alert(`Task confirmed. New balance: $${userData.balance}`);
-        showBalance();
+            alert(`Task confirmed. New balance: $${userData.balance}`);
+            showPendingTasks();
+        }
     }
-}
 
-function rejectTask(taskId) {
-    const task = tasks.find(t => t.id === taskId);
-    if (task) {
-        console.log(`Rejecting Task ID: ${taskId}`);
+    function rejectTask(taskId) {
         userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
         saveData();
+
+        alert("Task rejected. Please ensure your proof meets the requirements.");
+        showPendingTasks();
     }
-}
+
+    function showPendingTasks() {
+        let pendingList = '';
+        const currentTime = Date.now();
+
+        userData.pendingTasks.forEach(taskId => {
+            const task = tasks.find(t => t.id === taskId);
+            const taskTimer = userData.taskTimers[taskId] || {};
+            const timeElapsed = Math.floor((currentTime - taskTimer.submitted) / 1000);
+            const status = timeElapsed >= 5 ? "Checked" : `Pending (${5 - timeElapsed}s)`;
+
+            pendingList += `
+                <div>
+                    <h4>${task.title}</h4>
+                    <p>${task.description}</p>
+                    <p>Rate: $${task.rate}</p>
+                    <p>Status: ${status}</p>
+                </div>
+                <hr>`;
+        });
+
+        document.getElementById('taskPendingPopupContent').innerHTML = pendingList || "<p>No pending tasks.</p>";
+    }
+
+    // Call on page load
+    window.onload = function() {
+        showTasks();
+        showPendingTasks();
+    };
 
         function submitWithdrawal() {
     const name = document.getElementById('withdrawName').value;
