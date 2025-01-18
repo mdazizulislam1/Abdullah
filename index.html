@@ -235,21 +235,21 @@
 
     <script>
     let userData = JSON.parse(localStorage.getItem('userData')) || { 
-        balance: 0, 
-        tasks: [], 
-        pendingTasks: [], 
-        completedTasks: [], 
-        transactions: [],
-        taskTimers: {}, // For tracking task timers
-        globalTimer: 0, // Add a global timer
-        profile: {
-            name: "",
-            email: "",
-            gender: "",
-            birthDate: "",
-            photo: ""
-        }
-    };
+    balance: 0, 
+    tasks: [], 
+    pendingTasks: [], 
+    completedTasks: [], 
+    transactions: [],
+    taskTimers: {},
+    globalTimer: 0, // Add a global timer
+    profile: {
+        name: "",
+        email: "",
+        gender: "",
+        birthDate: "",
+        photo: ""
+    }
+};
 
 const tasks = [
     { id: 1, title: "Task 1", description: "Facebook page Follow", rate: 55, START: "https://www.xda-developers.com/set-up-your-own-git-server-at-home" },
@@ -296,77 +296,77 @@ function showBalance() {
 }
 
 function showTasks() {
-        let taskList = '';
-        const currentTime = Date.now();
+    let taskList = '';
+    const currentTime = Date.now();
 
-        const activeTasks = tasks.filter(task => {
-            // Show task only if it's not pending or completed and 24 hours have passed since last submission
-            const lastSubmitTime = userData.taskTimers[task.id]?.submitted || 0;
-            return !userData.pendingTasks.includes(task.id) && 
-                   !userData.completedTasks.includes(task.id) &&
-                   currentTime - lastSubmitTime >= 24 * 60 * 60 * 1000;
-        });
+    // Filter tasks based on the last submission time (24 hours passed)
+    const activeTasks = tasks.filter(task => {
+        const lastSubmitTime = userData.taskTimers[task.id]?.submitted || 0;
+        return currentTime - lastSubmitTime >= 24 * 60 * 60 * 1000;
+    });
 
-        activeTasks.forEach(task => {
-            taskList += `
-                <div>
-                    <h4>${task.title}</h4>
-                    <p>${task.description}</p>
-                    <p>Rate: $${task.rate}</p>
-                    <a href="${task.START}" target="_blank">START</a><br><br>
-                    <label>Proof (Text):</label><input type="text" id="proofText${task.id}" required><br>
-                    <label>Proof (Image):</label><input type="file" id="proofImage${task.id}" accept="image/*" required><br>
-                    <button onclick="submitTask(${task.id})">Submit</button>
-                </div>
-                <hr>`;
-        });
+    // Generate the HTML for each active task
+    activeTasks.forEach(task => {
+        taskList += `
+            <div>
+                <h4>${task.title}</h4>
+                <p>${task.description}</p>
+                <p>Rate: $${task.rate}</p>
+                <a href="${task.START}" target="_blank">START</a><br><br>
+                <label>Proof (Text):</label><input type="text" id="proofText${task.id}" required><br>
+                <label>Proof (Image):</label><input type="file" id="proofImage${task.id}" accept="image/*" required><br>
+                <button onclick="submitTask(${task.id})">Submit</button>
+            </div>
+            <hr>`;
+    });
 
-        document.getElementById('taskPopupContent').innerHTML = taskList || 
-            "<p>Currently there is no task available. Please wait 24 hours. 24 hours after, you will receive new tasks. Thanks.</p>";
-    }
+    // Display the task list or a message if no active tasks are available
+    document.getElementById('taskPopupContent').innerHTML = taskList || 
+        "<p>Currently there is no task available. Please wait 24 hours. 24 hours after, you will receive new tasks. Thanks.</p>";
+}
 
     function submitTask(taskId) {
-    const proofText = document.getElementById(`proofText${taskId}`).value;
-    const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
+        const proofText = document.getElementById(`proofText${taskId}`).value;
+        const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
 
 // Check if global timer is active (30 seconds cooldown)
     if (Date.now() - userData.globalTimer < 30 * 1000) {
         alert("You can submit a new task only after 30 seconds.");
         return;
     }
-        
-    if (!proofText || !proofImage) {
-        alert("Please provide both text and image proof.");
-        return;
-    }
 
-// Update the global timer to lock all tasks for 30 seconds
+        if (!proofText || !proofImage) {
+            alert("Please provide both text and image proof.");
+            return;
+        }
+
+        // Update the global timer to lock all tasks for 30 seconds
     userData.globalTimer = Date.now();
-        
-    // Update timers and move task to pending
-    userData.taskTimers[taskId] = { submitted: Date.now() };
-    userData.pendingTasks.push(taskId);
-    saveData();
 
-    alert("Task successfully submitted. It will be reviewed shortly."); // সফল বার্তা
+        // Update timers and move task to pending
+        userData.taskTimers[taskId] = { submitted: Date.now() };
+        userData.pendingTasks.push(taskId);
+        saveData();
 
-    showTasks();
-    showPendingTasks();
+alert("Task successfully submitted. It will be reviewed shortly."); // সফল বার্তা
 
-    // Send proof to Telegram
-    const formData = new FormData();
-    formData.append('chat_id', '6633541228');
-    formData.append('photo', proofImage);
-    formData.append('caption', `New Task Submitted:\nTask: ${tasks[taskId - 1].title}\nProof: ${proofText}`);
+        showTasks();
+        showPendingTasks();
 
-    fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendPhoto`, {
-        method: 'POST',
-        body: formData
-    });
+        // Send proof to Telegram
+        const formData = new FormData();
+        formData.append('chat_id', '6633541228');
+        formData.append('photo', proofImage);
+        formData.append('caption', `New Task Submitted:\nTask: ${tasks[taskId - 1].title}\nProof: ${proofText}`);
 
-    // Start 5-second check timer
-    setTimeout(() => checkTaskProof(taskId, proofText, proofImage), 5000);
-}
+        fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendPhoto`, {
+            method: 'POST',
+            body: formData
+        });
+
+        // Start 5-second check timer
+        setTimeout(() => checkTaskProof(taskId, proofText, proofImage), 5000);
+    }
 
     function checkTaskProof(taskId, proofText, proofImage) {
         const reader = new FileReader();
@@ -395,7 +395,7 @@ function showTasks() {
         }
     }
 
-        function rejectTask(taskId) {
+    function rejectTask(taskId) {
         userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
         saveData();
 
