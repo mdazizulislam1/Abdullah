@@ -325,7 +325,6 @@ function showTasks() {
     }
 
     function submitTask(taskId) {
-    function submitTask(taskId) {
     const proofText = document.getElementById(`proofText${taskId}`).value;
     const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
 
@@ -363,11 +362,11 @@ function showTasks() {
 
     // Start 5-second check timer
     setTimeout(() => checkTaskProof(taskId, proofText, proofImage), 5000);
-    }
+}
 
     function checkTaskProof(taskId, proofText, proofImage) {
         const reader = new FileReader();
-        reader.onload = fটunction(event) {
+        reader.onload = function(event) {
             const imageSize = event.total;
 
             if (proofText.includes("@gmail.com") && imageSize <= 2 * 1024 * 1024) { // 2MB limit
@@ -392,7 +391,7 @@ function showTasks() {
         }
     }
 
-    function rejectTask(taskId) {
+        function rejectTask(taskId) {
         userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
         saveData();
 
