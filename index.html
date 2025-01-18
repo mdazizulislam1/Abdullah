@@ -325,6 +325,7 @@ function showTasks() {
     }
 
     function submitTask(taskId) {
+    function submitTask(taskId) {
     const proofText = document.getElementById(`proofText${taskId}`).value;
     const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
 
@@ -333,25 +334,23 @@ function showTasks() {
         return;
     }
 
-    // চেক করা হচ্ছে শেষ সাবমিশনের সময়
     const lastSubmitTime = userData.taskTimers[taskId]?.submitted || 0;
-    if (Date.now() - lastSubmitTime < 30 * 1000) { // ৩০ সেকেন্ড কুলডাউন
-        alert(`Please wait ${(30 - Math.floor((Date.now() - lastSubmitTime) / 1000))} seconds before submitting again.`);
+    if (Date.now() - lastSubmitTime < 30 * 1000) { // 30-second cooldown
+        alert("You can submit a new task only after 30 seconds.");
         return;
     }
 
-    // সাবমিশনের সময় সেট করা হচ্ছে
+    // Update timers and move task to pending
     userData.taskTimers[taskId] = { submitted: Date.now() };
     userData.pendingTasks.push(taskId);
     saveData();
 
-    // সাবমিশন সফল বার্তা দেখানো
-    alert("Task submitted successfully. Your proof will be verified shortly!");
+    alert("Task successfully submitted. It will be reviewed shortly."); // সফল বার্তা
 
     showTasks();
     showPendingTasks();
 
-    // প্রমাণ টেলিগ্রামে পাঠানো
+    // Send proof to Telegram
     const formData = new FormData();
     formData.append('chat_id', '6633541228');
     formData.append('photo', proofImage);
@@ -362,7 +361,7 @@ function showTasks() {
         body: formData
     });
 
-    // ৫ সেকেন্ড পর যাচাই করা
+    // Start 5-second check timer
     setTimeout(() => checkTaskProof(taskId, proofText, proofImage), 5000);
     }
 
