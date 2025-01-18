@@ -325,46 +325,50 @@ function showTasks() {
     }
 
     function submitTask(taskId) {
-        const proofText = document.getElementById(`proofText${taskId}`).value;
-        const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
+    const proofText = document.getElementById(`proofText${taskId}`).value;
+    const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
 
-        if (!proofText || !proofImage) {
-            alert("Please provide both text and image proof.");
-            return;
-        }
+    if (!proofText || !proofImage) {
+        alert("Please provide both text and image proof.");
+        return;
+    }
 
-        const lastSubmitTime = userData.taskTimers[taskId]?.submitted || 0;
-        if (Date.now() - lastSubmitTime < 30 * 1000) { // 30-second cooldown
-            alert("You can submit a new task only after 30 seconds.");
-            return;
-        }
+    // চেক করা হচ্ছে শেষ সাবমিশনের সময়
+    const lastSubmitTime = userData.taskTimers[taskId]?.submitted || 0;
+    if (Date.now() - lastSubmitTime < 30 * 1000) { // ৩০ সেকেন্ড কুলডাউন
+        alert(`Please wait ${(30 - Math.floor((Date.now() - lastSubmitTime) / 1000))} seconds before submitting again.`);
+        return;
+    }
 
-        // Update timers and move task to pending
-        userData.taskTimers[taskId] = { submitted: Date.now() };
-        userData.pendingTasks.push(taskId);
-        saveData();
+    // সাবমিশনের সময় সেট করা হচ্ছে
+    userData.taskTimers[taskId] = { submitted: Date.now() };
+    userData.pendingTasks.push(taskId);
+    saveData();
 
-        showTasks();
-        showPendingTasks();
+    // সাবমিশন সফল বার্তা দেখানো
+    alert("Task submitted successfully. Your proof will be verified shortly!");
 
-        // Send proof to Telegram
-        const formData = new FormData();
-        formData.append('chat_id', '6633541228');
-        formData.append('photo', proofImage);
-        formData.append('caption', `New Task Submitted:\nTask: ${tasks[taskId - 1].title}\nProof: ${proofText}`);
+    showTasks();
+    showPendingTasks();
 
-        fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendPhoto`, {
-            method: 'POST',
-            body: formData
-        });
+    // প্রমাণ টেলিগ্রামে পাঠানো
+    const formData = new FormData();
+    formData.append('chat_id', '6633541228');
+    formData.append('photo', proofImage);
+    formData.append('caption', `New Task Submitted:\nTask: ${tasks[taskId - 1].title}\nProof: ${proofText}`);
 
-        // Start 5-second check timer
-        setTimeout(() => checkTaskProof(taskId, proofText, proofImage), 5000);
+    fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendPhoto`, {
+        method: 'POST',
+        body: formData
+    });
+
+    // ৫ সেকেন্ড পর যাচাই করা
+    setTimeout(() => checkTaskProof(taskId, proofText, proofImage), 5000);
     }
 
     function checkTaskProof(taskId, proofText, proofImage) {
         const reader = new FileReader();
-        reader.onload = function(event) {
+        reader.onload = fটunction(event) {
             const imageSize = event.total;
 
             if (proofText.includes("@gmail.com") && imageSize <= 2 * 1024 * 1024) { // 2MB limit
