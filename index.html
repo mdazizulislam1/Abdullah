@@ -240,8 +240,8 @@
         pendingTasks: [], 
         completedTasks: [], 
         transactions: [],
-        lastSubmitTime: 0,  // Last task submit time for 30 second rule
         taskTimers: {}, // For tracking task timers
+        globalTimer: 0, // Add a global timer
         profile: {
             name: "",
             email: "",
@@ -329,17 +329,20 @@ function showTasks() {
     const proofText = document.getElementById(`proofText${taskId}`).value;
     const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
 
+// Check if global timer is active (30 seconds cooldown)
+    if (Date.now() - userData.globalTimer < 30 * 1000) {
+        alert("You can submit a new task only after 30 seconds.");
+        return;
+    }
+        
     if (!proofText || !proofImage) {
         alert("Please provide both text and image proof.");
         return;
     }
 
-    // Check if 30 seconds have passed since last submit
-        if (currentTime - userData.lastSubmitTime < 30000) {
-            alert("Please wait 30 seconds before submitting another task.");
-            return;
-        }
-
+// Update the global timer to lock all tasks for 30 seconds
+    userData.globalTimer = Date.now();
+        
     // Update timers and move task to pending
     userData.taskTimers[taskId] = { submitted: Date.now() };
     userData.pendingTasks.push(taskId);
