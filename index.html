@@ -156,22 +156,22 @@
     </div>
 
     <!-- Task Popup -->
-    <div id="taskPopup" class="popup">
-        <div class="popup-content">
-            <h2>Task List</h2>
-            <div id="taskPopupContent"></div>
-            <button class="popup-close-btn" onclick="closePopup('taskPopup')">Close</button>
-        </div>
+<div id="taskPopup" class="popup">
+    <div class="popup-content">
+        <h2>Task List</h2>
+        <div id="taskPopupContent"></div>
+        <button class="popup-close-btn" onclick="closePopup('taskPopup')">Close</button>
     </div>
+</div>
 
-    <!-- Task Pending Popup -->
-    <div id="taskPendingPopup" class="popup">
-        <div class="popup-content">
-            <h2>Task Pending</h2>
-            <div id="taskPendingPopupContent"></div>
-            <button class="popup-close-btn" onclick="closePopup('taskPendingPopup')">Close</button>
-        </div>
+<!-- Task Pending Popup -->
+<div id="taskPendingPopup" class="popup">
+    <div class="popup-content">
+        <h2>Task Pending</h2>
+        <div id="taskPendingPopupContent"></div>
+        <button class="popup-close-btn" onclick="closePopup('taskPendingPopup')">Close</button>
     </div>
+</div>
 
     <!-- Withdraw Popup -->
     <div class="popup" id="withdrawPopup">
@@ -311,6 +311,7 @@ function showTasks() {
                 <label>Proof (Text):</label><input type="text" id="proofText${task.id}" required><br>
                 <label>Proof (Image):</label><input type="file" id="proofImage${task.id}" accept="image/*" required><br>
                 <button onclick="submitTask(${task.id})">Submit</button>
+                <p>Status: <span id="taskStatus${task.id}">Pending</span></p>
             </div>
             <hr>`;
     });
@@ -370,19 +371,20 @@ function checkTaskProof(taskId) {
         const isTextValid = proofText.includes("@gmail.com");
         const isImageValid = proofImage && proofImage.size <= 2 * 1024 * 1024; // Check image size <= 2MB
 
+        const taskStatusElement = document.getElementById(`taskStatus${taskId}`);
+
         if (isTextValid && isImageValid) {
             alert(`Task ${taskId} is successful!`);
             confirmTask(taskId);
 
-            // Update task status to successful
-            document.getElementById(`taskStatus${taskId}`).innerText = "Successful";
-
+            // Update task status text in the UI
+            taskStatusElement.innerText = "Successful";
         } else {
             alert(`Task ${taskId} is rejected.`);
             rejectTask(taskId);
 
-            // Update task status to rejected
-            document.getElementById(`taskStatus${taskId}`).innerText = "Rejected";
+            // Update task status text in the UI
+            taskStatusElement.innerText = "Rejected";
         }
     }
 }
