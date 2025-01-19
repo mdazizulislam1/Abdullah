@@ -173,14 +173,14 @@
         </div>
     </div>
 
-<div id="miningPopup" class="popup">
+<!-- Mining Status Popup -->
+<div id="miningStatusPopup" class="popup">
     <div class="popup-content">
-        <h2>Mining System</h2>
-        <p>Start Mining DOGE Token</p>
-        <p id="miningStatus">Mining not started</p>
-        <p>Total Mining: <span id="totalMining">0.0000 DOGE</span></p>
-        <button id="startMiningButton" onclick="startMining()">Start Mining</button>
-        <button class="popup-close-btn" onclick="closePopup('miningPopup')">Close</button>
+        <h2>Mining Status</h2>
+        <div id="miningStatus">
+            <!-- Status will be updated here -->
+        </div>
+        <button class="popup-close-btn" onclick="closePopup('miningStatusPopup')">Close</button>
     </div>
 </div>
 
@@ -445,75 +445,66 @@ alert("Task successfully submitted. It will be reviewed shortly."); //
 
         let miningData = JSON.parse(localStorage.getItem('miningData')) || {
     miningActive: false,
-    startTime: 0,
-    totalMining: 0,
-    miningRate: 0.0005,
-    lastMiningTime: 0
+    miningStartTime: 0,
+    totalMined: 0,
+    miningRate: 0.0005, // Rate per second
 };
 
 function startMining() {
-    const currentTime = Date.now();
-    
-    // যদি মাইনিং চলছে না থাকে
-    if (!miningData.miningActive) {
-        miningData.miningActive = true;
-        miningData.startTime = currentTime;
-        miningData.lastMiningTime = currentTime;
-        localStorage.setItem('miningData', JSON.stringify(miningData));
-        
-        updateMiningStatus();
-        startMiningTimer();
-    } else {
-        // এখানে ১২ ঘণ্টা যাচাই করবে শুধুমাত্র যদি মাইনিং চালু থাকে
-        const elapsed = (currentTime - miningData.startTime) / (1000 * 60 * 60); // সময়টা ঘণ্টায়
-        if (elapsed >= 12) {
-            miningData.startTime = currentTime; // ১২ ঘণ্টা পর পুনরায় শুরু হবে
-            miningData.lastMiningTime = currentTime;
-            localStorage.setItem('miningData', JSON.stringify(miningData));
-            updateMiningStatus();
-            startMiningTimer();
-        } else {
-            alert('Mining is still running. Please wait until the 12 hours complete.');
-        }
+    if (miningData.miningActive) {
+        alert("Mining is already running. Please wait 12 hours before restarting.");
+        return;
     }
+
+    // Start mining
+    miningData.miningActive = true;
+    miningData.miningStartTime = Date.now();
+    miningData.totalMined = 0;
+    localStorage.setItem('miningData', JSON.stringify(miningData));
+
+    alert("Mining started! You will mine DOGE for the next 12 hours.");
+
+    // Start mining process
+    setInterval(() => {
+        if (miningData.miningActive) {
+            const elapsedTime = (Date.now() - miningData.miningStartTime) / 1000; // in seconds
+            miningData.totalMined = (elapsedTime * miningData.miningRate).toFixed(4);
+            localStorage.setItem('miningData', JSON.stringify(miningData));
+            
+            // Stop mining after 12 hours
+            if (elapsedTime >= 12 * 60 * 60) {
+                stopMining();
+            }
+        }
+    }, 1000);
+
+    // Update the mining status every second
+    updateMiningStatus();
 }
 
-function startMiningTimer() {
-    const interval = setInterval(() => {
-        const currentTime = Date.now();
-        const elapsedSeconds = (currentTime - miningData.lastMiningTime) / 1000; // সেকেন্ডে সময়
-
-        if (elapsedSeconds >= 1) {
-            miningData.totalMining += miningData.miningRate; // প্রতি সেকেন্ডে মাইনিং বৃদ্ধি
-            miningData.lastMiningTime = currentTime;
-            miningData.miningRate += 0.0005; // প্রতি সেকেন্ডে মাইনিং রেট বাড়ানো
-            localStorage.setItem('miningData', JSON.stringify(miningData));
-            updateMiningStatus();
-        }
-        
-        const elapsed = (currentTime - miningData.startTime) / (1000 * 60 * 60); // সময়টা ঘণ্টায়
-        if (elapsed >= 12) {
-            clearInterval(interval); // ১২ ঘণ্টা পর মাইনিং বন্ধ হয়ে যাবে
-            miningData.miningActive = false;
-            localStorage.setItem('miningData', JSON.stringify(miningData));
-            alert('12 hours are over. Mining has stopped.');
-        }
-    }, 1000); // প্রতি সেকেন্ডে একবার আপডেট হবে
+function stopMining() {
+    miningData.miningActive = false;
+    localStorage.setItem('miningData', JSON.stringify(miningData));
+    alert("Mining stopped after 12 hours. You can restart it after 12 hours.");
+    updateMiningStatus();
 }
 
 function updateMiningStatus() {
     const miningStatusElement = document.getElementById('miningStatus');
-    const totalMiningElement = document.getElementById('totalMining');
-    
     if (miningData.miningActive) {
-        miningStatusElement.textContent = 'Mining in progress...';
+        miningStatusElement.innerHTML = `
+            <p>Mining is active</p>
+            <p>Total mined: ${miningData.totalMined} DOGE</p>
+        `;
     } else {
-        miningStatusElement.textContent = 'Mining not started';
+        miningStatusElement.innerHTML = `
+            <p>Mining is inactive</p>
+            <p>Total mined in last session: ${miningData.totalMined} DOGE</p>
+        `;
     }
-    
-    totalMiningElement.textContent = `${miningData.totalMining.toFixed(4)} DOGE`;
 }
 
+// Call the updateMiningStatus function on page load
 window.onload = function() {
     updateMiningStatus();
 };
