@@ -242,7 +242,6 @@
     transactions: [],
     taskTimers: {},
     globalTimer: 0, // Add a global timer
-    proofCheckTimers: {}, // Add timers for each task's proof checking
     profile: {
         name: "",
         email: "",
@@ -365,11 +364,8 @@ alert("Task successfully submitted. It will be reviewed shortly."); //  
             body: formData
         });
 
-        // Start task-specific 1-minute proof check timer
-        userData.proofCheckTimers[taskId] = Date.now();
-        saveData();
-
-        setTimeout(() => checkTaskProof(taskId, proofText, proofImage), 60 * 1000); // 1 minute timer
+        // Start 5-second check timer
+        setTimeout(() => checkTaskProof(taskId, proofText, proofImage), 5000);
     }
 
     function checkTaskProof(taskId, proofText, proofImage) {
@@ -414,8 +410,8 @@ alert("Task successfully submitted. It will be reviewed shortly."); //  
         userData.pendingTasks.forEach(taskId => {
             const task = tasks.find(t => t.id === taskId);
             const taskTimer = userData.taskTimers[taskId] || {};
-            const timeElapsed = Math.floor((currentTime - userData.proofCheckTimers[taskId]) / 1000);
-            const status = timeElapsed >= 60 ? "Checked" : `Pending (${60 - timeElapsed}s)`;
+            const timeElapsed = Math.floor((currentTime - taskTimer.submitted) / 1000);
+            const status = timeElapsed >= 5 ? "Checked" : `Pending (${5 - timeElapsed}s)`;
 
             pendingList += `
                 <div>
@@ -573,7 +569,7 @@ function saveProfile() {
         birthDate: birthDate,
         photo: ""
     };
-
+    
     if (profilePhoto) {
         const reader = new FileReader();
         reader.onloadend = function() {
