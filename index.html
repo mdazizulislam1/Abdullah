@@ -177,10 +177,11 @@
 <div id="miningPopup" class="popup">
     <div class="popup-content">
         <h2>Mining</h2>
-        <p><strong>Current Mining Rate:</strong> <span id="miningRate">0.0000</span> DOGE</p>
-        <p><strong>Total Mining:</strong> <span id="totalMining">0.0000</span> DOGE</p>
-        <p><strong>Next Mining Start:</strong> <span id="nextMiningTime">Not Started Yet</span></p>
-        <button class="button" id="startMiningBtn" onclick="startMining()">Start Mining</button>
+        <p>Your Mining Rate: <span id="miningRate">0.0001</span></p>
+        <p>Total Mining: <span id="totalMining">0.0000 DOGE</span></p>
+        <p>Mining Sessions: <span id="miningSessions">0</span></p>
+        <button id="startMiningButton" onclick="startMining()">Start Mining</button>
+        <p id="miningStatus" style="color: red; display: none;">Mining is in progress. You cannot stop before 12 hours.</p>
         <button class="popup-close-btn" onclick="closePopup('miningPopup')">Close</button>
     </div>
 </div>
@@ -444,81 +445,73 @@ alert("Task successfully submitted. It will be reviewed shortly."); //
         showPendingTasks();
     };
 
-let miningData = JSON.parse(localStorage.getItem('miningData')) || {
-    miningActive: false,
-    startTime: 0,
-    totalMining: 0,
-    miningRate: 0.0005,
-    sessionCount: 1, // সেশনের সংখ্যা
-    lastMiningTime: 0
-};
+// Initialize mining data in localStorage
+if (!userData.mining) {
+    userData.mining = {
+        rate: 0.0001,
+        total: 0.0000,
+        sessions: 0,
+        lastStartTime: null
+    };
+    saveData();
+}
 
+// Update Mining Popup with current data
+function updateMiningPopup() {
+    const miningData = userData.mining;
+    document.getElementById('miningRate').textContent = miningData.rate.toFixed(4);
+    document.getElementById('totalMining').textContent = miningData.total.toFixed(4);
+    document.getElementById('miningSessions').textContent = miningData.sessions;
+    const status = document.getElementById('miningStatus');
+    const startButton = document.getElementById('startMiningButton');
+
+    if (miningData.lastStartTime && Date.now() - miningData.lastStartTime < 12 * 60 * 60 * 1000) {
+        status.style.display = 'block';
+        startButton.disabled = true;
+    } else {
+        status.style.display = 'none';
+        startButton.disabled = false;
+    }
+}
+
+// Start Mining Function
 function startMining() {
-    const currentTime = Date.now();
-    
-    // যদি মাইনিং চলছে না থাকে
-    if (!miningData.miningActive) {
-        miningData.miningActive = true;
-        miningData.startTime = currentTime;
-        miningData.lastMiningTime = currentTime;
-        localStorage.setItem('miningData', JSON.stringify(miningData));
-        
-        updateMiningStatus();
-        startMiningTimer();
-    } else {
-        const elapsed = (currentTime - miningData.startTime) / (1000 * 60 * 60); // সময়টা ঘণ্টায়
-        if (elapsed >= 12) {
-            miningData.sessionCount += 1; // নতুন সেশন
-            miningData.miningRate = 0.0005 + (miningData.sessionCount - 1) * 0.0001; // রেট বৃদ্ধি
-            miningData.startTime = currentTime;
-            miningData.lastMiningTime = currentTime;
-            localStorage.setItem('miningData', JSON.stringify(miningData));
-            updateMiningStatus();
-            startMiningTimer();
+    const miningData = userData.mining;
+
+    // Check if 12 hours have passed since the last mining session
+    if (miningData.lastStartTime && Date.now() - miningData.lastStartTime < 12 * 60 * 60 * 1000) {
+        alert("Mining is already active. You cannot start a new session before 12 hours.");
+        return;
+    }
+
+    // Start mining session
+    miningData.lastStartTime = Date.now();
+    miningData.sessions += 1;
+    miningData.rate = 0.0001 * miningData.sessions;
+
+    // Increment mining total every 5 seconds
+    const miningInterval = setInterval(() => {
+        const elapsed = Date.now() - miningData.lastStartTime;
+        if (elapsed >= 12 * 60 * 60 * 1000) {
+            clearInterval(miningInterval);
+            alert("Mining session completed!");
+            updateMiningPopup();
         } else {
-            alert('Mining is still running. Please wait until the 12 hours complete.');
+            miningData.total += miningData.rate;
+            saveData();
+            updateMiningPopup();
         }
-    }
+    }, 5000);
+
+    saveData();
+    updateMiningPopup();
 }
 
-function startMiningTimer() {
-    const interval = setInterval(() => {
-        const currentTime = Date.now();
-        const elapsedSeconds = (currentTime - miningData.lastMiningTime) / 1000; // সেকেন্ডে সময়
-
-        if (elapsedSeconds >= 1) {
-            miningData.totalMining += miningData.miningRate; // বর্তমান রেট অনুযায়ী মাইনিং
-            miningData.lastMiningTime = currentTime;
-            localStorage.setItem('miningData', JSON.stringify(miningData));
-            updateMiningStatus();
-        }
-        
-        const elapsed = (currentTime - miningData.startTime) / (1000 * 60 * 60); // সময়টা ঘণ্টায়
-        if (elapsed >= 12) {
-            clearInterval(interval); // ১২ ঘণ্টা পর মাইনিং বন্ধ
-            miningData.miningActive = false;
-            alert(`12 hours completed. Session ${miningData.sessionCount} finished.`);
-            localStorage.setItem('miningData', JSON.stringify(miningData));
-        }
-    }, 1000); // প্রতি সেকেন্ডে আপডেট হবে
+// Add "Mining" button functionality
+function openMiningPopup() {
+    updateMiningPopup();
+    showPopup('miningPopup');
 }
-
-function updateMiningStatus() {
-    const miningStatusElement = document.getElementById('miningStatus');
-    const totalMiningElement = document.getElementById('totalMining');
-    
-    if (miningData.miningActive) {
-        miningStatusElement.textContent = `Mining in progress... (Session: ${miningData.sessionCount})`;
-    } else {
-        miningStatusElement.textContent = 'Mining not started';
-    }
-    
-    totalMiningElement.textContent = `${miningData.totalMining.toFixed(4)} DOGE`;
-}
-
-window.onload = function() {
-    updateMiningStatus();
-};
         
     function submitWithdrawal() {
     const name = document.getElementById('withdrawName').value;
