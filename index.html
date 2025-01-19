@@ -116,7 +116,7 @@
 </head>
 <body>
     <div class="container">
-        <h2>MAI NETWORK</h2>
+        <h2>AAA NETWORK</h2>
         <div id="profileContainer">
             <img id="profileImage" src="" alt="Profile Photo" style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 10px; display: none;">
             <h4 id="userName"></h4>
@@ -177,11 +177,12 @@
 <div id="miningPopup" class="popup">
     <div class="popup-content">
         <h2>Mining</h2>
-        <p>Your Mining Rate: <span id="miningRate">0.0001</span></p>
-        <p>Total Mining: <span id="totalMining">0.0000 DOGE</span></p>
-        <p>Mining Sessions: <span id="miningSessions">0</span></p>
+        <p>Your Mining Rate: <span id="miningRate">0.0001 DOGE</span></p>
+        <p><strong>12 Hours Mining:</strong> <span id="mining12HourTotal">0.0001 DOGE</span></p>
+        <p><strong>Total Mining:</strong> <span id="totalMining">0.0001 DOGE</span></p>
+        <p><strong>Mining Sessions:</strong> <span id="miningSessions">1</span></p>
         <button id="startMiningButton" onclick="startMining()">Start Mining</button>
-        <p id="miningStatus" style="color: red; display: none;">Mining is in progress. You cannot stop before 12 hours.</p>
+        <p id="miningMessage" style="color:red; display: none;">Mining is in progress...</p>
         <button class="popup-close-btn" onclick="closePopup('miningPopup')">Close</button>
     </div>
 </div>
@@ -248,27 +249,21 @@
 
     <script>
     let userData = JSON.parse(localStorage.getItem('userData')) || { 
-        balance: 0, 
-        tasks: [], 
-        pendingTasks: [], 
-        completedTasks: [], 
-        transactions: [],
-        taskTimers: {},
-        globalTimer: 0, // Add a global timer
-        profile: {
-            name: "",
-            email: "",
-            gender: "",
-            birthDate: "",
-            photo: ""
-        },
-        mining: {
-            rate: 0.0001,
-            total: 0.0000,
-            sessions: 0,
-            lastStartTime: null
-        }
-    };
+    balance: 0, 
+    tasks: [], 
+    pendingTasks: [], 
+    completedTasks: [], 
+    transactions: [],
+    taskTimers: {},
+    globalTimer: 0, // Add a global timer
+    profile: {
+        name: "",
+        email: "",
+        gender: "",
+        birthDate: "",
+        photo: ""
+    }
+};
 
 const tasks = [
     { id: 1, title: "Task 1", description: "Facebook page Follow", rate: 55, START: "https://www.xda-developers.com/set-up-your-own-git-server-at-home" },
@@ -451,61 +446,69 @@ alert("Task successfully submitted. It will be reviewed shortly."); //
         showPendingTasks();
     };
 
-        // Mining logic
-    function updateMiningPopup() {
-        const miningData = userData.mining;
-        document.getElementById('miningRate').textContent = miningData.rate.toFixed(4);
-        document.getElementById('totalMining').textContent = miningData.total.toFixed(4);
-        document.getElementById('miningSessions').textContent = miningData.sessions;
-        const status = document.getElementById('miningStatus');
-        const startButton = document.getElementById('startMiningButton');
+        let miningRate = 0.0001;  // Starting mining rate (DOGE)
+let totalMining = 0;  // Total mining value (DOGE)
+let miningSessions = 0;  // Counter for mining sessions
+let miningInterval;
+let miningStartTime = Date.now();  // Time when mining starts
+let mining12HourTotal = 0;  // Total mining in the current 12-hour period
+let mining12HourStartTime = Date.now();  // Time when 12-hour period starts
 
-        if (miningData.lastStartTime && Date.now() - miningData.lastStartTime < 12 * 60 * 60 * 1000) {
-            status.style.display = 'block';
-            startButton.disabled = true;
-        } else {
-            status.style.display = 'none';
-            startButton.disabled = false;
-        }
-    }
-
-    // Start Mining Function
+// Function to start mining
 function startMining() {
-    const miningData = userData.mining;
-
-    // Check if 12 hours have passed since the last mining session
-    if (miningData.lastStartTime && Date.now() - miningData.lastStartTime < 12 * 60 * 60 * 1000) {
-        // No need for alert, just return as the button is already disabled
+    // If mining has already started, show a message
+    if (document.getElementById('miningMessage').style.display === 'block') {
+        alert("Mining is already in progress.");
         return;
     }
 
+    document.getElementById('miningMessage').style.display = 'block'; // Show mining message
+    document.getElementById('startMiningButton').disabled = true; // Disable the start button
+
+    miningSessions++; // Increment mining session count
+    updateMiningStats(); // Update mining stats
+
     // Start mining session
-    miningData.lastStartTime = Date.now();
-    miningData.sessions += 1;
-    miningData.rate = 0.0001 * miningData.sessions;
+    miningInterval = setInterval(() => {
+        // Increase mining rate after each session
+        miningRate += 0.0001;
+        totalMining += miningRate;
 
-    // Increment mining total every 5 seconds
-    const miningInterval = setInterval(() => {
-        const elapsed = Date.now() - miningData.lastStartTime;
-        if (elapsed >= 12 * 60 * 60 * 1000) {
-            clearInterval(miningInterval);
-            updateMiningPopup();
-        } else {
-            miningData.total += miningData.rate;
-            saveData();
-            updateMiningPopup();
+        // Update 12-hour mining total
+        if (Date.now() - mining12HourStartTime < 12 * 60 * 60 * 1000) {
+            mining12HourTotal += miningRate;
         }
-    }, 5000);
 
-    saveData();
-    updateMiningPopup();
+        updateMiningStats(); // Update UI with latest mining stats
+    }, 5000); // 5-second interval
 }
 
-    // Add "Mining" button functionality
-    function openMiningPopup() {
-        updateMiningPopup();
-        showPopup('miningPopup');
+// Function to stop mining
+function stopMining() {
+    clearInterval(miningInterval); // Stop mining process
+    document.getElementById('miningMessage').style.display = 'none'; // Hide mining message
+    document.getElementById('startMiningButton').disabled = false; // Re-enable start button
+    alert("Mining session stopped.");
+}
+
+// Update mining statistics in the UI
+function updateMiningStats() {
+    document.getElementById('miningRate').textContent = miningRate.toFixed(4) + " DOGE";
+    document.getElementById('totalMining').textContent = totalMining.toFixed(4) + " DOGE";
+    document.getElementById('miningSessions').textContent = miningSessions;
+    document.getElementById('mining12HourTotal').textContent = mining12HourTotal.toFixed(4) + " DOGE";
+
+    // Check if 12-hour period is over and reset mining data
+    if (Date.now() - mining12HourStartTime >= 12 * 60 * 60 * 1000) {
+        mining12HourStartTime = Date.now(); // Reset 12-hour timer
+        mining12HourTotal = 0; // Reset 12-hour total
     }
+}
+
+// Function to open the mining popup
+function openMiningPopup() {
+    showPopup('miningPopup');
+}
         
     function submitWithdrawal() {
     const name = document.getElementById('withdrawName').value;
