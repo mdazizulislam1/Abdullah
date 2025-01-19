@@ -455,7 +455,17 @@ alert("Task successfully submitted. It will be reviewed shortly."); //
     sessionStartTime: 0   // Session start time
 };
 
-function showMiningPopup() {
+// Save mining data to localStorage
+function saveMiningData() {
+    localStorage.setItem('miningData', JSON.stringify(miningData));
+}
+
+// Load mining data from localStorage (to make sure it persists across refreshes)
+function loadMiningData() {
+    let savedData = JSON.parse(localStorage.getItem('miningData'));
+    if (savedData) {
+        miningData = savedData;
+    }
     // Update the mining popup with data from localStorage
     document.getElementById('miningRate').textContent = miningData.miningRate + ' DOGE';
     document.getElementById('sessionMining').textContent = miningData.sessionMining.toFixed(4) + ' DOGE';
@@ -468,10 +478,9 @@ function showMiningPopup() {
     } else {
         document.getElementById('miningStatus').style.display = 'none';
     }
-
-    showPopup('miningPopup');
 }
 
+// Start mining process
 function startMining() {
     // Check if mining is already in progress
     if (miningData.miningInProgress) {
@@ -490,10 +499,11 @@ function startMining() {
     saveMiningData();
 }
 
+// Simulate mining process and update data every 5 seconds
 function mine() {
-    // If 12 hours have passed, reset the session mining and increase the rate
     const currentTime = Date.now();
     const sessionDuration = currentTime - miningData.sessionStartTime;
+
     if (sessionDuration >= 12 * 60 * 60 * 1000) {
         // Complete the session
         miningData.sessionsCompleted++;
@@ -518,15 +528,16 @@ function mine() {
     document.getElementById('sessionsCompleted').textContent = miningData.sessionsCompleted;
 }
 
-function saveMiningData() {
-    // Save mining data to localStorage
-    localStorage.setItem('miningData', JSON.stringify(miningData));
+// Show the mining popup and load current data
+function showMining() {
+    loadMiningData();
+    showPopup('miningPopup');
 }
 
-function closePopup(popupId) {
-    const popup = document.getElementById(popupId);
-    popup.style.display = 'none';
-}
+// Call the showMining function when the page loads
+window.onload = function() {
+    loadMiningData(); // Load mining data from localStorage when the page loads
+};
         
     function submitWithdrawal() {
     const name = document.getElementById('withdrawName').value;
