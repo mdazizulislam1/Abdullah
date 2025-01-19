@@ -177,12 +177,12 @@
 <div id="miningPopup" class="popup">
     <div class="popup-content">
         <h2>Mining</h2>
-        <p>Your Mining Rate: <span id="miningRate">0.0001 DOGE</span></p>
-        <p><strong>12 Hours Mining:</strong> <span id="mining12HourTotal">0.0001 DOGE</span></p>
-        <p><strong>Total Mining:</strong> <span id="totalMining">0.0001 DOGE</span></p>
-        <p><strong>Mining Sessions:</strong> <span id="miningSessions">1</span></p>
-        <button id="startMiningButton" onclick="startMining()">Start Mining</button>
-        <p id="miningMessage" style="color:red; display: none;">Mining is in progress...</p>
+        <p>Your mining rate: <span id="miningRate">0.0001 DOGE</span></p>
+        <p>12-hour session mining: <span id="sessionMining">0.0000 DOGE</span></p>
+        <p>Total mining: <span id="totalMining">0.0000 DOGE</span></p>
+        <p>Mining sessions completed: <span id="sessionsCompleted">0</span></p>
+        <button id="startMiningBtn" onclick="startMining()">Start Mining</button>
+        <p id="miningStatus" style="color:red; display:none;">Mining in progress...</p>
         <button class="popup-close-btn" onclick="closePopup('miningPopup')">Close</button>
     </div>
 </div>
@@ -446,68 +446,86 @@ alert("Task successfully submitted. It will be reviewed shortly."); //
         showPendingTasks();
     };
 
-        let miningRate = 0.0001;  // Starting mining rate (DOGE)
-let totalMining = 0;  // Total mining value (DOGE)
-let miningSessions = 0;  // Counter for mining sessions
-let miningInterval;
-let miningStartTime = Date.now();  // Time when mining starts
-let mining12HourTotal = 0;  // Total mining in the current 12-hour period
-let mining12HourStartTime = Date.now();  // Time when 12-hour period starts
+        let miningData = JSON.parse(localStorage.getItem('miningData')) || {
+    miningRate: 0.0001, // Initial mining rate
+    sessionMining: 0,   // Total mined in the current session
+    totalMining: 0,     // Total mined across all sessions
+    sessionsCompleted: 0, // Number of completed sessions
+    miningInProgress: false, // Is mining in progress
+    sessionStartTime: 0   // Session start time
+};
 
-// Function to start mining
+function showMiningPopup() {
+    // Update the mining popup with data from localStorage
+    document.getElementById('miningRate').textContent = miningData.miningRate + ' DOGE';
+    document.getElementById('sessionMining').textContent = miningData.sessionMining.toFixed(4) + ' DOGE';
+    document.getElementById('totalMining').textContent = miningData.totalMining.toFixed(4) + ' DOGE';
+    document.getElementById('sessionsCompleted').textContent = miningData.sessionsCompleted;
+
+    // Show mining status
+    if (miningData.miningInProgress) {
+        document.getElementById('miningStatus').style.display = 'inline';
+    } else {
+        document.getElementById('miningStatus').style.display = 'none';
+    }
+
+    showPopup('miningPopup');
+}
+
 function startMining() {
-    // If mining has already started, show a message
-    if (document.getElementById('miningMessage').style.display === 'block') {
+    // Check if mining is already in progress
+    if (miningData.miningInProgress) {
         alert("Mining is already in progress.");
         return;
     }
 
-    document.getElementById('miningMessage').style.display = 'block'; // Show mining message
-    document.getElementById('startMiningButton').disabled = true; // Disable the start button
-
-    miningSessions++; // Increment mining session count
-    updateMiningStats(); // Update mining stats
-
     // Start mining session
-    miningInterval = setInterval(() => {
-        // Increase mining rate after each session
-        miningRate += 0.0001;
-        totalMining += miningRate;
+    miningData.miningInProgress = true;
+    miningData.sessionStartTime = Date.now();
+    document.getElementById('miningStatus').style.display = 'inline';
+    document.getElementById('startMiningBtn').disabled = true;  // Disable the start button during mining
 
-        // Update 12-hour mining total
-        if (Date.now() - mining12HourStartTime < 12 * 60 * 60 * 1000) {
-            mining12HourTotal += miningRate;
-        }
-
-        updateMiningStats(); // Update UI with latest mining stats
-    }, 5000); // 5-second interval
+    // Start the mining process
+    mine();
+    saveMiningData();
 }
 
-// Function to stop mining
-function stopMining() {
-    clearInterval(miningInterval); // Stop mining process
-    document.getElementById('miningMessage').style.display = 'none'; // Hide mining message
-    document.getElementById('startMiningButton').disabled = false; // Re-enable start button
-    alert("Mining session stopped.");
-}
-
-// Update mining statistics in the UI
-function updateMiningStats() {
-    document.getElementById('miningRate').textContent = miningRate.toFixed(4) + " DOGE";
-    document.getElementById('totalMining').textContent = totalMining.toFixed(4) + " DOGE";
-    document.getElementById('miningSessions').textContent = miningSessions;
-    document.getElementById('mining12HourTotal').textContent = mining12HourTotal.toFixed(4) + " DOGE";
-
-    // Check if 12-hour period is over and reset mining data
-    if (Date.now() - mining12HourStartTime >= 12 * 60 * 60 * 1000) {
-        mining12HourStartTime = Date.now(); // Reset 12-hour timer
-        mining12HourTotal = 0; // Reset 12-hour total
+function mine() {
+    // If 12 hours have passed, reset the session mining and increase the rate
+    const currentTime = Date.now();
+    const sessionDuration = currentTime - miningData.sessionStartTime;
+    if (sessionDuration >= 12 * 60 * 60 * 1000) {
+        // Complete the session
+        miningData.sessionsCompleted++;
+        miningData.totalMining += miningData.sessionMining;  // Add session mining to total mining
+        miningData.sessionMining = 0;  // Reset session mining
+        miningData.miningRate = 0.0002; // After 12 hours, increase the mining rate
+        miningData.miningInProgress = false;
+        document.getElementById('miningStatus').style.display = 'none'; // Hide mining status
+        document.getElementById('startMiningBtn').disabled = false;  // Enable the start button again
+        saveMiningData();
+        alert("12-hour session completed!");
+    } else {
+        // Simulate mining progress
+        miningData.sessionMining += miningData.miningRate / 720; // Increment by rate divided by number of seconds in 12 hours (720)
+        saveMiningData();
+        setTimeout(mine, 5000); // Update every 5 seconds
     }
+
+    // Update the popup with the new data
+    document.getElementById('sessionMining').textContent = miningData.sessionMining.toFixed(4) + ' DOGE';
+    document.getElementById('totalMining').textContent = miningData.totalMining.toFixed(4) + ' DOGE';
+    document.getElementById('sessionsCompleted').textContent = miningData.sessionsCompleted;
 }
 
-// Function to open the mining popup
-function openMiningPopup() {
-    showPopup('miningPopup');
+function saveMiningData() {
+    // Save mining data to localStorage
+    localStorage.setItem('miningData', JSON.stringify(miningData));
+}
+
+function closePopup(popupId) {
+    const popup = document.getElementById(popupId);
+    popup.style.display = 'none';
 }
         
     function submitWithdrawal() {
