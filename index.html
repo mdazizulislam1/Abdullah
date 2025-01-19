@@ -254,6 +254,11 @@
     transactions: [],
     taskTimers: {},
     globalTimer: 0, // Add a global timer
+        totalMining: 0, // Total mined DOGE
+    miningRate: 0.0005, // Initial mining rate (DOGE per second)
+    miningStartTime: 0, // Timestamp when mining was started
+    miningInProgress: false, // To check if mining is in progress
+    lastMiningEndTime: 0 // Timestamp of the last mining session end
     profile: {
         name: "",
         email: "",
@@ -443,14 +448,6 @@ alert("Task successfully submitted. It will be reviewed shortly."); //
         showTasks();
         showPendingTasks();
     };
-
-        let miningData = JSON.parse(localStorage.getItem('miningData')) || {
-    totalMining: 0, // Total mined DOGE
-    miningRate: 0.0005, // Initial mining rate (DOGE per second)
-    miningStartTime: 0, // Timestamp when mining was started
-    miningInProgress: false, // To check if mining is in progress
-    lastMiningEndTime: 0 // Timestamp of the last mining session end
-};
 
 // Show Mining Popup with current mining info
 function showMiningPopup() {
