@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAI NETWORK</title>
+    <title>AAA NETWORK</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -83,9 +83,9 @@
         }
         .popup-close-btn {
     position: absolute;
-    bottom: 40px; /*      */
-    left: 50%; /*     */
-    transform: translateX(-50%); /*      */
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
     padding: 10px 20px;
     background: red;
     color: white;
@@ -172,6 +172,17 @@
             <button class="popup-close-btn" onclick="closePopup('taskPendingPopup')">Close</button>
         </div>
     </div>
+
+<div id="miningPopup" class="popup">
+    <div class="popup-content">
+        <h2>Mining System</h2>
+        <p>Start Mining DOGE Token</p>
+        <p id="miningStatus">Mining not started</p>
+        <p>Total Mining: <span id="totalMining">0.0000 DOGE</span></p>
+        <button id="startMiningButton" onclick="startMining()">Start Mining</button>
+        <button class="popup-close-btn" onclick="closePopup('miningPopup')">Close</button>
+    </div>
+</div>
 
     <!-- Withdraw Popup -->
     <div class="popup" id="withdrawPopup">
@@ -282,7 +293,7 @@ function showPopup(popupId) {
 function closePopup(popupId) {
     const popup = document.getElementById(popupId);
     popup.style.display = 'none';
-    window.history.back(); //    
+    window.history.back(); //
 }
 
 function openLink(link) {
@@ -348,7 +359,7 @@ function showTasks() {
         userData.pendingTasks.push(taskId);
         saveData();
 
-alert("Task successfully submitted. It will be reviewed shortly."); //  
+alert("Task successfully submitted. It will be reviewed shortly."); // 
 
         showTasks();
         showPendingTasks();
@@ -432,7 +443,81 @@ alert("Task successfully submitted. It will be reviewed shortly."); //  
         showPendingTasks();
     };
 
-        function submitWithdrawal() {
+        let miningData = JSON.parse(localStorage.getItem('miningData')) || {
+    miningActive: false,
+    startTime: 0,
+    totalMining: 0,
+    miningRate: 0.0005,
+    lastMiningTime: 0
+};
+
+function startMining() {
+    const currentTime = Date.now();
+    
+    // যদি মাইনিং চলছে না থাকে
+    if (!miningData.miningActive) {
+        miningData.miningActive = true;
+        miningData.startTime = currentTime;
+        miningData.lastMiningTime = currentTime;
+        localStorage.setItem('miningData', JSON.stringify(miningData));
+        
+        updateMiningStatus();
+        startMiningTimer();
+    } else {
+        const elapsed = (currentTime - miningData.startTime) / (1000 * 60 * 60); // সময়টা ঘণ্টায়
+        if (elapsed >= 12) {
+            miningData.startTime = currentTime; // ১২ ঘণ্টা পর পুনরায় শুরু হবে
+            miningData.lastMiningTime = currentTime;
+            localStorage.setItem('miningData', JSON.stringify(miningData));
+            updateMiningStatus();
+            startMiningTimer();
+        } else {
+            alert('Mining is still running. Please wait until the 12 hours complete.');
+        }
+    }
+}
+
+function startMiningTimer() {
+    const interval = setInterval(() => {
+        const currentTime = Date.now();
+        const elapsedSeconds = (currentTime - miningData.lastMiningTime) / 1000; // সেকেন্ডে সময়
+
+        if (elapsedSeconds >= 1) {
+            miningData.totalMining += miningData.miningRate; // প্রতি সেকেন্ডে মাইনিং বৃদ্ধি
+            miningData.lastMiningTime = currentTime;
+            miningData.miningRate += 0.0005; // প্রতি সেকেন্ডে মাইনিং রেট বাড়ানো
+            localStorage.setItem('miningData', JSON.stringify(miningData));
+            updateMiningStatus();
+        }
+        
+        const elapsed = (currentTime - miningData.startTime) / (1000 * 60 * 60); // সময়টা ঘণ্টায়
+        if (elapsed >= 12) {
+            clearInterval(interval); // ১২ ঘণ্টা পর মাইনিং বন্ধ হয়ে যাবে
+            miningData.miningActive = false;
+            localStorage.setItem('miningData', JSON.stringify(miningData));
+            alert('12 hours are over. Mining has stopped.');
+        }
+    }, 1000); // প্রতি সেকেন্ডে একবার আপডেট হবে
+}
+
+function updateMiningStatus() {
+    const miningStatusElement = document.getElementById('miningStatus');
+    const totalMiningElement = document.getElementById('totalMining');
+    
+    if (miningData.miningActive) {
+        miningStatusElement.textContent = 'Mining in progress...';
+    } else {
+        miningStatusElement.textContent = 'Mining not started';
+    }
+    
+    totalMiningElement.textContent = `${miningData.totalMining.toFixed(4)} DOGE`;
+}
+
+window.onload = function() {
+    updateMiningStatus();
+};
+
+    function submitWithdrawal() {
     const name = document.getElementById('withdrawName').value;
     const contact = document.getElementById('withdrawContact').value;
     const method = document.getElementById('withdrawMethod').value;
