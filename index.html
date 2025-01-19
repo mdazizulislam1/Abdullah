@@ -176,7 +176,7 @@
 <!-- Mining Popup -->
 <div id="miningPopup" class="popup">
     <div class="popup-content">
-        <h2>Mining System</h2>
+        <h2>Mining</h2>
         <p><strong>Current Mining Rate:</strong> <span id="miningRate">0.0000</span> DOGE</p>
         <p><strong>Total Mining:</strong> <span id="totalMining">0.0000</span> DOGE</p>
         <p><strong>Next Mining Start:</strong> <span id="nextMiningTime">Not Started Yet</span></p>
@@ -525,12 +525,6 @@ function startMining() {
 // Save the mining data to localStorage to persist across sessions
 function saveMiningData() {
     localStorage.setItem('miningData', JSON.stringify(miningData));
-}
-
-// Close the popup
-function closePopup(popupId) {
-    const popup = document.getElementById(popupId);
-    popup.style.display = 'none';
 }
 
     function submitWithdrawal() {
