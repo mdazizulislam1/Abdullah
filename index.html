@@ -464,6 +464,7 @@ function startMining() {
         updateMiningStatus();
         startMiningTimer();
     } else {
+        // এখানে ১২ ঘণ্টা যাচাই করবে শুধুমাত্র যদি মাইনিং চালু থাকে
         const elapsed = (currentTime - miningData.startTime) / (1000 * 60 * 60); // সময়টা ঘণ্টায়
         if (elapsed >= 12) {
             miningData.startTime = currentTime; // ১২ ঘণ্টা পর পুনরায় শুরু হবে
