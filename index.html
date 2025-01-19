@@ -248,21 +248,27 @@
 
     <script>
     let userData = JSON.parse(localStorage.getItem('userData')) || { 
-    balance: 0, 
-    tasks: [], 
-    pendingTasks: [], 
-    completedTasks: [], 
-    transactions: [],
-    taskTimers: {},
-    globalTimer: 0, // Add a global timer
-    profile: {
-        name: "",
-        email: "",
-        gender: "",
-        birthDate: "",
-        photo: ""
-    }
-};
+        balance: 0, 
+        tasks: [], 
+        pendingTasks: [], 
+        completedTasks: [], 
+        transactions: [],
+        taskTimers: {},
+        globalTimer: 0, // Add a global timer
+        profile: {
+            name: "",
+            email: "",
+            gender: "",
+            birthDate: "",
+            photo: ""
+        },
+        mining: {  // Initialize mining data if it doesn't exist in localStorage
+            rate: 0.0001,
+            total: 0.0000,
+            sessions: 0,
+            lastStartTime: null
+        }
+    };
 
 const tasks = [
     { id: 1, title: "Task 1", description: "Facebook page Follow", rate: 55, START: "https://www.xda-developers.com/set-up-your-own-git-server-at-home" },
@@ -445,73 +451,66 @@ alert("Task successfully submitted. It will be reviewed shortly."); //
         showPendingTasks();
     };
 
-// Initialize mining data in localStorage
-if (!userData.mining) {
-    userData.mining = {
-        rate: 0.0001,
-        total: 0.0000,
-        sessions: 0,
-        lastStartTime: null
-    };
-    saveData();
-}
-
-// Update Mining Popup with current data
-function updateMiningPopup() {
-    const miningData = userData.mining;
-    document.getElementById('miningRate').textContent = miningData.rate.toFixed(4);
-    document.getElementById('totalMining').textContent = miningData.total.toFixed(4);
-    document.getElementById('miningSessions').textContent = miningData.sessions;
-    const status = document.getElementById('miningStatus');
-    const startButton = document.getElementById('startMiningButton');
-
-    if (miningData.lastStartTime && Date.now() - miningData.lastStartTime < 12 * 60 * 60 * 1000) {
-        status.style.display = 'block';
-        startButton.disabled = true;
-    } else {
-        status.style.display = 'none';
-        startButton.disabled = false;
-    }
-}
-
-// Start Mining Function
-function startMining() {
-    const miningData = userData.mining;
-
-    // Check if 12 hours have passed since the last mining session
-    if (miningData.lastStartTime && Date.now() - miningData.lastStartTime < 12 * 60 * 60 * 1000) {
-        alert("Mining is already active. You cannot start a new session before 12 hours.");
-        return;
+        if (!userData.mining) {
+        userData.mining = {
+            rate: 0.0001,
+            total: 0.0000,
+            sessions: 0,
+            lastStartTime: null
+        };
+        saveData();
     }
 
-    // Start mining session
-    miningData.lastStartTime = Date.now();
-    miningData.sessions += 1;
-    miningData.rate = 0.0001 * miningData.sessions;
+    function updateMiningPopup() {
+        const miningData = userData.mining;
+        document.getElementById('miningRate').textContent = miningData.rate.toFixed(4);
+        document.getElementById('totalMining').textContent = miningData.total.toFixed(4);
+        document.getElementById('miningSessions').textContent = miningData.sessions;
+        const status = document.getElementById('miningStatus');
+        const startButton = document.getElementById('startMiningButton');
 
-    // Increment mining total every 5 seconds
-    const miningInterval = setInterval(() => {
-        const elapsed = Date.now() - miningData.lastStartTime;
-        if (elapsed >= 12 * 60 * 60 * 1000) {
-            clearInterval(miningInterval);
-            alert("Mining session completed!");
-            updateMiningPopup();
+        if (miningData.lastStartTime && Date.now() - miningData.lastStartTime < 12 * 60 * 60 * 1000) {
+            status.style.display = 'block';
+            startButton.disabled = true;
         } else {
-            miningData.total += miningData.rate;
-            saveData();
-            updateMiningPopup();
+            status.style.display = 'none';
+            startButton.disabled = false;
         }
-    }, 5000);
+    }
 
-    saveData();
-    updateMiningPopup();
-}
+    function startMining() {
+        const miningData = userData.mining;
 
-// Add "Mining" button functionality
-function openMiningPopup() {
-    updateMiningPopup();
-    showPopup('miningPopup');
-}
+        if (miningData.lastStartTime && Date.now() - miningData.lastStartTime < 12 * 60 * 60 * 1000) {
+            alert("Mining is already active. You cannot start a new session before 12 hours.");
+            return;
+        }
+
+        miningData.lastStartTime = Date.now();
+        miningData.sessions += 1;
+        miningData.rate = 0.0001 * miningData.sessions;
+
+        const miningInterval = setInterval(() => {
+            const elapsed = Date.now() - miningData.lastStartTime;
+            if (elapsed >= 12 * 60 * 60 * 1000) {
+                clearInterval(miningInterval);
+                alert("Mining session completed!");
+                updateMiningPopup();
+            } else {
+                miningData.total += miningData.rate;
+                saveData();
+                updateMiningPopup();
+            }
+        }, 5000);
+
+        saveData();
+        updateMiningPopup();
+    }
+
+    function openMiningPopup() {
+        updateMiningPopup();
+        showPopup('miningPopup');
+    }
         
     function submitWithdrawal() {
     const name = document.getElementById('withdrawName').value;
