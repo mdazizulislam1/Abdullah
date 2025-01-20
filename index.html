@@ -456,7 +456,7 @@ let miningData = JSON.parse(localStorage.getItem('miningData')) || {
 
 let miningInterval;  // interval ID to clear it later
 
-// Update mining rate and session time based on the current state
+// Fix: Make sure that 'Start Mining' button visibility and status are updated on UI
 function updateMiningDisplay() {
     const miningRate = miningData.miningRate;
     const miningSessionTime = miningData.sessionStartTime ? Math.floor((Date.now() - miningData.sessionStartTime) / 60000) : 0; // in minutes
@@ -467,6 +467,14 @@ function updateMiningDisplay() {
     document.getElementById('miningSessionTime').textContent = `${Math.floor(miningSessionTime / 60)} hours ${miningSessionTime % 60} minutes`;
     document.getElementById('totalMining').textContent = totalMining;
     document.getElementById('miningSessions').textContent = miningSessions;
+
+    if (miningData.sessionStartTime) {
+        document.getElementById('startMiningBtn').style.display = 'none';  // Hide start button while mining
+        document.getElementById('miningStatus').style.display = 'block';  // Show mining status
+    } else {
+        document.getElementById('startMiningBtn').style.display = 'inline';  // Show start button if no session
+        document.getElementById('miningStatus').style.display = 'none';  // Hide mining status if no session
+    }
 
     // If session time exceeds 12 hours, increase the mining rate
     if (miningSessionTime >= 720) { // 12 hours in minutes
@@ -520,9 +528,11 @@ function showMiningPopup() {
     updateMiningDisplay(); // Update UI when popup is shown
 }
 
+// Fix: Update mining status on page load based on session state
 window.onload = function() {
+    updateMiningDisplay();  // Update UI when page loads
+
     if (miningData.sessionStartTime) {
-        // If mining is already running, restart the interval
         const miningSessionTime = Math.floor((Date.now() - miningData.sessionStartTime) / 60000); // in minutes
 
         if (miningSessionTime < 720) {
