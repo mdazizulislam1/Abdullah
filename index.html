@@ -246,128 +246,128 @@
             <button class="cancel-btn" onclick="closePopup('settingsPopup')">Cancel</button>
         </div>
     </div>
-    
+
     <script>
     let userData = JSON.parse(localStorage.getItem('userData')) || { 
-        balance: 0, 
-        tasks: [], 
-        pendingTasks: [], 
-        completedTasks: [], 
-        transactions: [],
-        taskTimers: {},
-        globalTimer: 0, // Add a global timer
-        profile: {
-            name: "",
-            email: "",
-            gender: "",
-            birthDate: "",
-            photo: ""
-        }
-    };
-
-    const tasks = [
-        { id: 1, title: "Task 1", description: "Facebook page Follow", rate: 55, START: "https://www.xda-developers.com/set-up-your-own-git-server-at-home" },
-        { id: 2, title: "Task 2", description: "Facebook page Invite", rate: 15, START: "https://clk.kim/XK9Q" },
-        { id: 3, title: "Task 3", description: "Facebook page Review", rate: 85, START: "https://example.com" },
-        { id: 4, title: "Task 4", description: "Facebook page Video Watch", rate: 70, START: "https://example.com" }
-    ];
-
-    // Mining session data
-    let miningData = JSON.parse(localStorage.getItem('miningData')) || {
-        miningRate: 0.0001,
-        totalMining: 0,
-        miningSessions: 0,
-        sessionStartTime: null
-    };
-
-    let miningInterval;  // interval ID to clear it later
-
-    function saveData() {
-        console.log("Saving data to localStorage:", userData); // Debugging log
-        localStorage.setItem('userData', JSON.stringify(userData));
+    balance: 0, 
+    tasks: [], 
+    pendingTasks: [], 
+    completedTasks: [], 
+    transactions: [],
+    taskTimers: {},
+    globalTimer: 0, // Add a global timer
+    profile: {
+        name: "",
+        email: "",
+        gender: "",
+        birthDate: "",
+        photo: ""
     }
+};
 
-    function showPopup(popupId) {
-        const popup = document.getElementById(popupId);
-        popup.style.display = 'flex';
+const tasks = [
+    { id: 1, title: "Task 1", description: "Facebook page Follow", rate: 55, START: "https://www.xda-developers.com/set-up-your-own-git-server-at-home" },
+    { id: 2, title: "Task 2", description: "Facebook page Invite", rate: 15, START: "https://clk.kim/XK9Q" },
+    { id: 3, title: "Task 3", description: "Facebook page Review", rate: 85, START: "https://example.com" },
+    { id: 4, title: "Task 4", description: "Facebook page Video Watch", rate: 70, START: "https://example.com" }
+];
 
-        popup.addEventListener('click', (e) => {
-            if (e.target === popup) {
-                closePopup(popupId);
-            }
-        });
+function saveData() {
+    console.log("Saving data to localStorage:", userData); // Debugging log
+    localStorage.setItem('userData', JSON.stringify(userData));
+}
 
-        window.history.pushState(null, null, window.location.href);
-        window.onpopstate = function () {
+function showPopup(popupId) {
+    const popup = document.getElementById(popupId);
+    popup.style.display = 'flex';
+
+    popup.addEventListener('click', (e) => {
+        if (e.target === popup) {
             closePopup(popupId);
-        };
-    }
+        }
+    });
 
-    function closePopup(popupId) {
-        const popup = document.getElementById(popupId);
-        popup.style.display = 'none';
-        window.history.back(); //
-    }
+    window.history.pushState(null, null, window.location.href);
+    window.onpopstate = function () {
+        closePopup(popupId);
+    };
+}
 
-    function openLink(link) {
-        window.open(link, '_blank');
-    }
+function closePopup(popupId) {
+    const popup = document.getElementById(popupId);
+    popup.style.display = 'none';
+    window.history.back(); //
+}
 
-    function showBalance() {
-        alert(`Your current balance is $${userData.balance}`);
-    }
+function openLink(link) {
+    window.open(link, '_blank');
+}
 
-    function showTasks() {
-        let taskList = '';
-        const currentTime = Date.now();
+function showBalance() {
+    alert(`Your current balance is $${userData.balance}`);
+    // You can also update the UI in the container here
+    // Example: document.getElementById('balanceDisplay').textContent = `Balance: $${userData.balance}`;
+}
 
-        const activeTasks = tasks.filter(task => {
-            const lastSubmitTime = userData.taskTimers[task.id]?.submitted || 0;
-            return currentTime - lastSubmitTime >= 24 * 60 * 60 * 1000;
-        });
+function showTasks() {
+    let taskList = '';
+    const currentTime = Date.now();
 
-        activeTasks.forEach(task => {
-            taskList += `
-                <div>
-                    <h4>${task.title}</h4>
-                    <p>${task.description}</p>
-                    <p>Rate: $${task.rate}</p>
-                    <a href="${task.START}" target="_blank">START</a><br><br>
-                    <label>Proof (Text):</label><input type="text" id="proofText${task.id}" required><br>
-                    <label>Proof (Image):</label><input type="file" id="proofImage${task.id}" accept="image/*" required><br>
-                    <button onclick="submitTask(${task.id})">Submit</button>
-                </div>
-                <hr>`;
-        });
+    // Filter tasks based on the last submission time (24 hours passed)
+    const activeTasks = tasks.filter(task => {
+        const lastSubmitTime = userData.taskTimers[task.id]?.submitted || 0;
+        return currentTime - lastSubmitTime >= 24 * 60 * 60 * 1000;
+    });
 
-        document.getElementById('taskPopupContent').innerHTML = taskList || 
-            "<p>Currently there is no task available. Please wait 24 hours. 24 hours after, you will receive new tasks. Thanks.</p>";
-    }
+    // Generate the HTML for each active task
+    activeTasks.forEach(task => {
+        taskList += `
+            <div>
+                <h4>${task.title}</h4>
+                <p>${task.description}</p>
+                <p>Rate: $${task.rate}</p>
+                <a href="${task.START}" target="_blank">START</a><br><br>
+                <label>Proof (Text):</label><input type="text" id="proofText${task.id}" required><br>
+                <label>Proof (Image):</label><input type="file" id="proofImage${task.id}" accept="image/*" required><br>
+                <button onclick="submitTask(${task.id})">Submit</button>
+            </div>
+            <hr>`;
+    });
+
+    // Display the task list or a message if no active tasks are available
+    document.getElementById('taskPopupContent').innerHTML = taskList || 
+        "<p>Currently there is no task available. Please wait 24 hours. 24 hours after, you will receive new tasks. Thanks.</p>";
+}
 
     function submitTask(taskId) {
         const proofText = document.getElementById(`proofText${taskId}`).value;
         const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
 
-        if (Date.now() - userData.globalTimer < 30 * 1000) {
-            alert("You can submit a new task only after 30 seconds.");
-            return;
-        }
+// Check if global timer is active (30 seconds cooldown)
+    if (Date.now() - userData.globalTimer < 30 * 1000) {
+        alert("You can submit a new task only after 30 seconds.");
+        return;
+    }
 
         if (!proofText || !proofImage) {
             alert("Please provide both text and image proof.");
             return;
         }
 
-        userData.globalTimer = Date.now();
+        // Update the global timer to lock all tasks for 30 seconds
+    userData.globalTimer = Date.now();
+
+        // Update timers and move task to pending
         userData.taskTimers[taskId] = { submitted: Date.now() };
         userData.pendingTasks.push(taskId);
         saveData();
 
-        alert("Task successfully submitted. It will be reviewed shortly.");
+alert("Task successfully submitted. It will be reviewed shortly."); // 
 
         showTasks();
         showPendingTasks();
 
+        // Send proof to Telegram
         const formData = new FormData();
         formData.append('chat_id', '6633541228');
         formData.append('photo', proofImage);
@@ -378,6 +378,7 @@
             body: formData
         });
 
+        // Start 5-second check timer
         setTimeout(() => checkTaskProof(taskId, proofText, proofImage), 5000);
     }
 
@@ -386,7 +387,7 @@
         reader.onload = function(event) {
             const imageSize = event.total;
 
-            if (proofText.includes("@gmail.com") && imageSize <= 2 * 1024 * 1024) {
+            if (proofText.includes("@gmail.com") && imageSize <= 2 * 1024 * 1024) { // 2MB limit
                 confirmTask(taskId);
             } else {
                 rejectTask(taskId);
@@ -439,174 +440,309 @@
         document.getElementById('taskPendingPopupContent').innerHTML = pendingList || "<p>No pending tasks.</p>";
     }
 
-        function updateMiningDisplay() {
-        const miningRate = miningData.miningRate;
-        const miningSessionTime = miningData.sessionStartTime ? Math.floor((Date.now() - miningData.sessionStartTime) / 60000) : 0; 
-        const totalMining = miningData.totalMining.toFixed(4);
-        const miningSessions = miningData.miningSessions;
+    // Call on page load
+    window.onload = function() {
+        showTasks();
+        showPendingTasks();
+    };
 
-        document.getElementById('miningRate').textContent = `${miningRate} DOGE`;
-        document.getElementById('miningSessionTime').textContent = `${Math.floor(miningSessionTime / 60)} hours ${miningSessionTime % 60} minutes`;
-        document.getElementById('totalMining').textContent = totalMining;
-        document.getElementById('miningSessions').textContent = miningSessions;
+        // Mining session data
+let miningData = JSON.parse(localStorage.getItem('miningData')) || {
+    miningRate: 0.0001,
+    totalMining: 0,
+    miningSessions: 0,
+    sessionStartTime: null
+};
 
-        if (miningSessionTime >= 720) {
-            miningData.miningRate = 0.0002;
-            localStorage.setItem('miningData', JSON.stringify(miningData));
-            updateMiningDisplay();
-        }
+let miningInterval;  // interval ID to clear it later
+
+// Update mining rate and session time based on the current state
+function updateMiningDisplay() {
+    const miningRate = miningData.miningRate;
+    const miningSessionTime = miningData.sessionStartTime ? Math.floor((Date.now() - miningData.sessionStartTime) / 60000) : 0; // in minutes
+    const totalMining = miningData.totalMining.toFixed(4);
+    const miningSessions = miningData.miningSessions;
+
+    document.getElementById('miningRate').textContent = `${miningRate} DOGE`;
+    document.getElementById('miningSessionTime').textContent = `${Math.floor(miningSessionTime / 60)} hours ${miningSessionTime % 60} minutes`;
+    document.getElementById('totalMining').textContent = totalMining;
+    document.getElementById('miningSessions').textContent = miningSessions;
+
+    // If session time exceeds 12 hours, increase the mining rate
+    if (miningSessionTime >= 720) { // 12 hours in minutes
+        miningData.miningRate = 0.0002;  // Increase rate after 12 hours
+        localStorage.setItem('miningData', JSON.stringify(miningData));
+        updateMiningDisplay();
+    }
+}
+
+// Start mining
+function startMining() {
+    if (miningData.sessionStartTime) {
+        alert("Mining is already running.");
+        return;
     }
 
-    function startMining() {
+    // Start a new mining session
+    miningData.sessionStartTime = Date.now();
+    miningData.miningSessions += 1;
+    localStorage.setItem('miningData', JSON.stringify(miningData));
+
+    document.getElementById('startMiningBtn').style.display = 'none';
+    document.getElementById('miningStatus').style.display = 'block';
+
+    // Start the mining process (increase mining every 5 seconds)
+    miningInterval = setInterval(() => {
         if (miningData.sessionStartTime) {
-            alert("Mining is already running.");
-            return;
+            const miningSessionTime = Math.floor((Date.now() - miningData.sessionStartTime) / 60000); // in minutes
+
+            // Increase mining total based on the rate
+            miningData.totalMining += miningData.miningRate;
+            localStorage.setItem('miningData', JSON.stringify(miningData));
+            updateMiningDisplay();  // Update display to show current mining stats
+
+            // After 12 hours, stop the mining session and increase the session count
+            if (miningSessionTime >= 720) { // 720 minutes = 12 hours
+                clearInterval(miningInterval); // Stop mining after 12 hours
+                miningData.sessionStartTime = null;  // Reset session start time for new session
+                localStorage.setItem('miningData', JSON.stringify(miningData)); // Save updated data
+
+                document.getElementById('miningStatus').textContent = "Mining session has ended. Starting a new session.";
+                document.getElementById('startMiningBtn').style.display = 'inline';  // Allow to start a new session
+            }
         }
+    }, 5000);  // Update every 5 seconds
+}
 
-        miningData.sessionStartTime = Date.now();
-        miningData.miningSessions += 1;
-        localStorage.setItem('miningData', JSON.stringify(miningData));
+// Open the mining popup
+function showMiningPopup() {
+    showPopup('miningPopup');
+    updateMiningDisplay(); // Update UI when popup is shown
+}
 
-        document.getElementById('startMiningBtn').style.display = 'none';
-        document.getElementById('miningStatus').style.display = 'block';
-
+// On page load, check if mining is already running
+window.onload = function() {
+    if (miningData.sessionStartTime) {
+        // If mining is already running, restart the interval
         miningInterval = setInterval(() => {
             if (miningData.sessionStartTime) {
-                const miningSessionTime = Math.floor((Date.now() - miningData.sessionStartTime) / 60000);
+                const miningSessionTime = Math.floor((Date.now() - miningData.sessionStartTime) / 60000); // in minutes
 
+                // Increase mining total based on the rate
                 miningData.totalMining += miningData.miningRate;
                 localStorage.setItem('miningData', JSON.stringify(miningData));
-                updateMiningDisplay();
+                updateMiningDisplay();  // Update display to show current mining stats
 
-                if (miningSessionTime >= 720) {
-                    clearInterval(miningInterval);
-                    miningData.sessionStartTime = null;
-                    localStorage.setItem('miningData', JSON.stringify(miningData));
+                // After 12 hours, stop the mining session and increase the session count
+                if (miningSessionTime >= 720) { // 720 minutes = 12 hours
+                    clearInterval(miningInterval); // Stop mining after 12 hours
+                    miningData.sessionStartTime = null;  // Reset session start time for new session
+                    localStorage.setItem('miningData', JSON.stringify(miningData)); // Save updated data
 
                     document.getElementById('miningStatus').textContent = "Mining session has ended. Starting a new session.";
-                    document.getElementById('startMiningBtn').style.display = 'inline';
+                    document.getElementById('startMiningBtn').style.display = 'inline';  // Allow to start a new session
                 }
             }
-        }, 5000);
+        }, 5000);  // Update every 5 seconds
     }
 
-    function showMiningPopup() {
-        showPopup('miningPopup');
-        updateMiningDisplay();
+    showMiningPopup();  // Ensure mining popup is shown
+};
+
+function submitWithdrawal() {
+    const name = document.getElementById('withdrawName').value;
+    const contact = document.getElementById('withdrawContact').value;
+    const method = document.getElementById('withdrawMethod').value;
+    const number = document.getElementById('withdrawNumber').value;
+    const amount = parseFloat(document.getElementById('withdrawAmount').value);
+
+    if (!name || !contact || !method || !amount || amount < 5) {
+        alert("Please fill out all fields correctly. Minimum withdrawal amount is $5.");
+        return;
     }
 
-    function submitWithdrawal() {
-        const name = document.getElementById('withdrawName').value;
-        const contact = document.getElementById('withdrawContact').value;
-        const method = document.getElementById('withdrawMethod').value;
-        const number = document.getElementById('withdrawNumber').value;
-        const amount = parseFloat(document.getElementById('withdrawAmount').value);
+    if (amount > userData.balance) {
+        alert("Insufficient balance.");
+        return;
+    }
 
-        if (!name || !contact || !method || !amount || amount < 5) {
-            alert("Please fill out all fields correctly. Minimum withdrawal amount is $5.");
-            return;
-        }
+    // Deduct balance when withdrawal request is submitted
+    userData.balance -= amount;
+    userData.transactions.push({ name, contact, method, amount, status: "Pending" });
+    saveData();
 
-        if (amount > userData.balance) {
-            alert("Insufficient balance.");
-            return;
-        }
-
-        userData.balance -= amount;
-        userData.transactions.push({ name, contact, method, amount, status: "Pending" });
-        saveData();
-
-        const message = `New Withdrawal Request:\nName: ${name}\nContact: ${contact}\nMethod: ${method}\nNumber: ${number}\nAmount: $${amount}`;
-        fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: '6633541228',
-                text: message,
-                reply_markup: {
-                    inline_keyboard: [
-                        [
-                            { text: "Confirm", callback_data: `confirm_${amount}` },
-                            { text: "Reject", callback_data: `reject_${amount}` }
-                        ]
+    const message = `New Withdrawal Request:\nName: ${name}\nContact: ${contact}\nMethod: ${method}\nNumber: ${number}\nAmount: $${amount}`;
+    fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            chat_id: '6633541228',
+            text: message,
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        { text: "Confirm", callback_data: `confirm_${amount}` },
+                        { text: "Reject", callback_data: `reject_${amount}` }
                     ]
-                }
-            })
+                ]
+            }
         })
-        .then(response => response.json())
-        .then(data => console.log(data))
-        .catch(err => console.error(err));
+    })
+    .then(response => response.json())
+    .then(data => console.log(data))
+    .catch(err => console.error(err));
 
-        alert("Withdrawal request submitted. Waiting for approval.");
-        closePopup('withdrawPopup');
-    }
+    alert("Withdrawal request submitted. Waiting for approval.");
+    closePopup('withdrawPopup');
+}
 
-    function showTransactionHistory() {
-        let historyList = '';
-        userData.transactions.forEach(transaction => {
-            historyList += `
-                <div>
-                    <h4>Withdrawal Request</h4>
-                    <p>Name: ${transaction.name}</p>
-                    <p>Contact: ${transaction.contact}</p>
-                    <p>Method: ${transaction.method}</p>
-                    <p>Amount: $${transaction.amount}</p>
-                    <p>Status: ${transaction.status}</p>
-                </div>
-                <hr>`;
-        });
+function showTransactionHistory() {
+    let historyList = '';
+    userData.transactions.forEach(transaction => {
+        historyList += `
+            <div>
+                <p><strong>Name:</strong> ${transaction.name}</p>
+                <p><strong>Contact:</strong> ${transaction.contact}</p>
+                <p><strong>Method:</strong> ${transaction.method}</p>
+                <p><strong>Number:</strong> ${transaction.number}</p>
+                <p><strong>Amount:</strong> $${transaction.amount}</p>
+                <p><strong>Status:</strong> ${transaction.status}</p>
+                <hr>
+            </div>`;
+    });
 
-        document.getElementById('transactionHistoryPopupContent').innerHTML = historyList || "<p>No transactions available.</p>";
-    }
+    document.getElementById('transactionHistoryPopupContent').innerHTML = historyList || "<p>No transactions found.</p>";
+}
 
-    function showProfile() {
-        document.getElementById('profileName').textContent = userData.profile.name || "Name not set";
-        document.getElementById('profileEmail').textContent = userData.profile.email || "Email not set";
-        document.getElementById('profileGender').textContent = userData.profile.gender || "Gender not set";
-        document.getElementById('profileBirthDate').textContent = userData.profile.birthDate || "Birthdate not set";
-        document.getElementById('profilePhoto').src = userData.profile.photo || "default-avatar.png";
-    }
+// Generate unique referral link
+function generateReferralLink() {
+    const userId = userData.profile.email || 'guest'; // Use profile email or 'guest' if not logged in
+    const referralLink = `https://mdazizulislam1.github.io/Abdullah/?ref=${encodeURIComponent(userId)}`;
+    document.getElementById('referralLink').value = referralLink;
+}
 
-    function saveProfile() {
-        userData.profile.name = document.getElementById('editName').value;
-        userData.profile.email = document.getElementById('editEmail').value;
-        userData.profile.gender = document.getElementById('editGender').value;
-        userData.profile.birthDate = document.getElementById('editBirthDate').value;
-        userData.profile.photo = document.getElementById('editPhoto').src;  // Assuming image has been uploaded and is shown in img element
+// Copy referral link to clipboard
+function copyReferralLink() {
+    const linkField = document.getElementById('referralLink');
+    linkField.select();
+    document.execCommand('copy');
+    alert('Referral link copied to clipboard!');
+}
+
+// Track referrals
+function trackReferral() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const referrer = urlParams.get('ref');
+
+    if (referrer) {
+        if (!userData.referrals) {
+            userData.referrals = {};
+        }
+
+        userData.referrals[referrer] = (userData.referrals[referrer] || 0) + 1;
+
+        // Update earnings if referrals reach a multiple of 25
+        if (userData.referrals[referrer] % 25 === 0) {
+            userData.balance += 1; // Add $1 for every 25 referrals
+        }
 
         saveData();
-        alert("Profile updated successfully!");
-        closePopup('profilePopup');
-        showProfile();
+    }
+}
+
+// Display referral data in popup
+function showReferralData() {
+    const referralCount = Object.values(userData.referrals || {}).reduce((sum, count) => sum + count, 0);
+    const referralEarnings = Math.floor(referralCount / 25);
+    
+    document.getElementById('referralCount').textContent = referralCount;
+    document.getElementById('referralEarnings').textContent = referralEarnings;
+}
+
+// Call trackReferral on page load
+window.onload = function() {
+    trackReferral();
+    showReferralData();
+    // Other existing onload functions...
+};
+
+function saveProfile() {
+    const profilePhoto = document.getElementById('profilePhoto').files[0];
+    const fullName = document.getElementById('fullName').value;
+    const email = document.getElementById('email').value;
+    const gender = document.getElementById('gender').value;
+    const birthDate = document.getElementById('birthDate').value;
+
+    if (!fullName || !email || !gender || !birthDate) {
+        alert("Please fill in all fields.");
+        return;
     }
 
-    // Profile upload image functionality
-    function handleImageUpload(event) {
-        const file = event.target.files[0];
+    // Save the profile information in localStorage
+    let profileData = {
+        name: fullName,
+        email: email,
+        gender: gender,
+        birthDate: birthDate,
+        photo: ""
+    };
+    
+    if (profilePhoto) {
         const reader = new FileReader();
+        reader.onloadend = function() {
+            profileData.photo = reader.result;  // Save image as a data URL
+            userData.profile = profileData;
+            saveData();
 
-        reader.onload = function(e) {
-            document.getElementById('editPhoto').src = e.target.result;
+            // Show the profile photo and name on the main screen
+            document.getElementById('profileImage').src = reader.result;
+            document.getElementById('profileImage').style.display = 'block';
+            document.getElementById('userName').textContent = fullName;
+
+            closePopup('settingsPopup');
         };
+        reader.readAsDataURL(profilePhoto);  // Convert file to data URL
+    } else {
+        userData.profile = profileData;
+        saveData();
 
-        reader.readAsDataURL(file);
+        // Show the profile photo and name without an image
+        document.getElementById('profileImage').style.display = 'none';
+        document.getElementById('userName').textContent = fullName;
+
+        closePopup('settingsPopup');
+    }
+}
+
+window.onload = function() {
+    // Check if user data exists in localStorage
+    if (userData.profile.name) {
+        // Display profile image and name if data is already available
+        if (userData.profile.photo) {
+            document.getElementById('profileImage').src = userData.profile.photo;
+            document.getElementById('profileImage').style.display = 'block';
+        } else {
+            document.getElementById('profileImage').style.display = 'none';
+        }
+        document.getElementById('userName').textContent = userData.profile.name;
+    } else {
+        // Show settings popup if no profile data is saved
+        showPopup('settingsPopup');
     }
 
-    // Event listeners for page elements
-    document.getElementById('startMiningBtn').addEventListener('click', startMining);
-    document.getElementById('showTasksBtn').addEventListener('click', showTasks);
-    document.getElementById('showProfileBtn').addEventListener('click', showProfile);
-    document.getElementById('showTransactionHistoryBtn').addEventListener('click', showTransactionHistory);
-    document.getElementById('submitProfileBtn').addEventListener('click', saveProfile);
-    document.getElementById('uploadPhotoInput').addEventListener('change', handleImageUpload);
-
-    // Loading user data from local storage
-    window.onload = function() {
-        showBalance();
-        showTasks();
-        showProfile();
-        showTransactionHistory();
-        updateMiningDisplay();
+    // Load existing profile info in settings form (for editing)
+    if (userData.profile.name) {
+        document.getElementById('fullName').value = userData.profile.name;
+    }
+    if (userData.profile.email) {
+        document.getElementById('email').value = userData.profile.email;
+    }
+    if (userData.profile.gender) {
+        document.getElementById('gender').value = userData.profile.gender;
+    }
+    if (userData.profile.birthDate) {
+        document.getElementById('birthDate').value = userData.profile.birthDate;
+        }
     };
 </script>
 </body>
