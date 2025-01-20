@@ -173,17 +173,17 @@
         </div>
     </div>
 
-<!-- Mining Popup -->
+<!-- Mining Popup HTML -->
 <div id="miningPopup" class="popup">
     <div class="popup-content">
-        <h2>Mining</h2>
-        <p>Your Mining Rate: <span id="miningRate">0.0001 DOGE</span></p>
-        <p>12 Hour Mining Session: <span id="miningSessionTime">0 hours 0 minutes</span></p>
-        <p>Total Mining: <span id="totalMining">0.0000 DOGE</span></p>
-        <p>Mining Sessions: <span id="miningSessions">0</span></p>
+        <span id="popupCloseBtn" class="popup-close">&times;</span>
+        <h2>Mining Session</h2>
+        <p>Mining Rate: <span id="miningRate">0.0001 DOGE</span></p>
+        <p>Session Time: <span id="miningSessionTime">0 hours 0 minutes</span></p>
+        <p>Total Mining: <span id="totalMining">0.0000</span> DOGE</p>
+        <p>Sessions: <span id="miningSessions">0</span></p>
+        <p id="miningStatus">Mining is not active.</p>
         <button id="startMiningBtn" onclick="startMining()">Start Mining</button>
-        <p id="miningStatus" style="color: red; display: none;">Mining is running...</p>
-        <button class="popup-close-btn" onclick="closePopup('miningPopup')">Close</button>
     </div>
 </div>
 
