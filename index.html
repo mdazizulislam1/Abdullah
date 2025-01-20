@@ -131,8 +131,8 @@
     <button class="button" onclick="showPopup('taskPendingPopup'); showPendingTasks();">
          TASK PENDING
     </button>
-    <button class="button" onclick="showPopup('miningPopup'); showMining();">
-     MINING
+    <button class="button" onclick="openLink('https://example.com/mining')">
+         MINING
     </button>
     <button class="button" onclick="showPopup('withdrawPopup')">
          WITHDRAW
@@ -512,8 +512,8 @@ function startMining() {
 window.onload = function () {
     updateMiningUI();
 };
-        
-    function submitWithdrawal() {
+
+        function submitWithdrawal() {
     const name = document.getElementById('withdrawName').value;
     const contact = document.getElementById('withdrawContact').value;
     const method = document.getElementById('withdrawMethod').value;
