@@ -174,7 +174,7 @@
     </div>
 
 <!-- Mining Popup -->
-<div id="miningPopup" class="popup" style="display: none;">
+<div id="miningPopup" class="popup">
     <div class="popup-content">
         <h2>Mining</h2>
         <p>Your Mining Rate: <span id="miningRate">0.0001 DOGE</span></p>
@@ -186,9 +186,6 @@
         <button class="popup-close-btn" onclick="closePopup('miningPopup')">Close</button>
     </div>
 </div>
-
-    <!-- Popup Overlay -->
-<div id="overlay" style="display: none;"></div>
 
     <!-- Withdraw Popup -->
     <div class="popup" id="withdrawPopup">
@@ -521,18 +518,6 @@ function startMining() {
 function showMiningPopup() {
     showPopup('miningPopup');
     updateMiningDisplay(); // Update UI when popup is shown
-}
-
-// Show the popup
-function showPopup(popupId) {
-    document.getElementById(popupId).style.display = 'block';
-    document.getElementById('overlay').style.display = 'block'; // Optional: For overlay effect
-}
-
-// Close the popup
-function closePopup(popupId) {
-    document.getElementById(popupId).style.display = 'none';
-    document.getElementById('overlay').style.display = 'none'; // Optional: For overlay effect
 }
 
 window.onload = function() {
