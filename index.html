@@ -504,17 +504,21 @@ function mine() {
     const currentTime = Date.now();
     const sessionDuration = currentTime - miningData.sessionStartTime;
 
-    if (sessionDuration >= 12 * 60 * 60 * 1000) {
+    if (sessionDuration >= 12 * 60 * 60 * 1000) { // 12-hour session completed
         // Complete the session
         miningData.sessionsCompleted++;
         miningData.totalMining += miningData.sessionMining;  // Add session mining to total mining
         miningData.sessionMining = 0;  // Reset session mining
-        miningData.miningRate = 0.0002; // After 12 hours, increase the mining rate
+
+        // After 12 hours, reset mining rate to 0.0001
+        miningData.miningRate = 0.0001; 
+
         miningData.miningInProgress = false;
+
         document.getElementById('miningStatus').style.display = 'none'; // Hide mining status
         document.getElementById('startMiningBtn').disabled = false;  // Enable the start button again
         saveMiningData();
-        alert("12-hour session completed!");
+        alert("12-hour session completed! Mining rate reset to 0.0001 DOGE.");
     } else {
         // Simulate mining progress
         miningData.sessionMining += miningData.miningRate / 720; // Increment by rate divided by number of seconds in 12 hours (720)
