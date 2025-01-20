@@ -446,7 +446,7 @@ alert("Task successfully submitted. It will be reviewed shortly."); //
         showPendingTasks();
     };
 
-         let miningData = JSON.parse(localStorage.getItem('miningData')) || {
+        let miningData = JSON.parse(localStorage.getItem('miningData')) || {
     miningRate: 0.0001, // Initial mining rate
     sessionMining: 0,   // Total mined in the current session
     totalMining: 0,     // Total mined across all sessions
@@ -538,7 +538,7 @@ function showMining() {
 window.onload = function() {
     loadMiningData(); // Load mining data from localStorage when the page loads
 };
-
+        
         function submitWithdrawal() {
     const name = document.getElementById('withdrawName').value;
     const contact = document.getElementById('withdrawContact').value;
