@@ -446,15 +446,17 @@ alert("Task successfully submitted. It will be reviewed shortly."); //
         showPendingTasks();
     };
 
-        let miningData = JSON.parse(localStorage.getItem('miningData')) || {
+        // Mining session data
+let miningData = JSON.parse(localStorage.getItem('miningData')) || {
     miningRate: 0.0001,
     totalMining: 0,
     miningSessions: 0,
     sessionStartTime: null
 };
 
-let miningInterval;
+let miningInterval;  // interval ID to clear it later
 
+// Update mining rate and session time based on the current state
 function updateMiningDisplay() {
     const miningRate = miningData.miningRate;
     const miningSessionTime = miningData.sessionStartTime ? Math.floor((Date.now() - miningData.sessionStartTime) / 60000) : 0; // in minutes
@@ -466,6 +468,7 @@ function updateMiningDisplay() {
     document.getElementById('totalMining').textContent = totalMining;
     document.getElementById('miningSessions').textContent = miningSessions;
 
+    // If session time exceeds 12 hours, increase the mining rate
     if (miningSessionTime >= 720) { // 12 hours in minutes
         miningData.miningRate = 0.0002;  // Increase rate after 12 hours
         localStorage.setItem('miningData', JSON.stringify(miningData));
@@ -473,12 +476,14 @@ function updateMiningDisplay() {
     }
 }
 
+// Start mining
 function startMining() {
     if (miningData.sessionStartTime) {
         alert("Mining is already running.");
         return;
     }
 
+    // Start a new mining session
     miningData.sessionStartTime = Date.now();
     miningData.miningSessions += 1;
     localStorage.setItem('miningData', JSON.stringify(miningData));
@@ -486,54 +491,73 @@ function startMining() {
     document.getElementById('startMiningBtn').style.display = 'none';
     document.getElementById('miningStatus').style.display = 'block';
 
+    // Start the mining process (increase mining every 5 seconds)
     miningInterval = setInterval(() => {
         if (miningData.sessionStartTime) {
             const miningSessionTime = Math.floor((Date.now() - miningData.sessionStartTime) / 60000); // in minutes
 
+            // Increase mining total based on the rate
             miningData.totalMining += miningData.miningRate;
             localStorage.setItem('miningData', JSON.stringify(miningData));
-            updateMiningDisplay();
+            updateMiningDisplay();  // Update display to show current mining stats
 
-            if (miningSessionTime >= 720) {
-                clearInterval(miningInterval);
-                miningData.sessionStartTime = null;
-                localStorage.setItem('miningData', JSON.stringify(miningData));
+            // After 12 hours, stop the mining session and increase the session count
+            if (miningSessionTime >= 720) { // 720 minutes = 12 hours
+                clearInterval(miningInterval); // Stop mining after 12 hours
+                miningData.sessionStartTime = null;  // Reset session start time for new session
+                localStorage.setItem('miningData', JSON.stringify(miningData)); // Save updated data
 
                 document.getElementById('miningStatus').textContent = "Mining session has ended. Starting a new session.";
-                document.getElementById('startMiningBtn').style.display = 'inline';
+                document.getElementById('startMiningBtn').style.display = 'inline';  // Allow to start a new session
             }
         }
-    }, 5000);
+    }, 5000);  // Update every 5 seconds
 }
 
+// Open the mining popup
 function showMiningPopup() {
     showPopup('miningPopup');
-    updateMiningDisplay();
+    updateMiningDisplay(); // Update UI when popup is shown
 }
 
-// On page load, check if mining is already running
 window.onload = function() {
     if (miningData.sessionStartTime) {
-        miningInterval = setInterval(() => {
-            if (miningData.sessionStartTime) {
-                const miningSessionTime = Math.floor((Date.now() - miningData.sessionStartTime) / 60000);
-                miningData.totalMining += miningData.miningRate;
-                localStorage.setItem('miningData', JSON.stringify(miningData));
-                updateMiningDisplay();
+        // If mining is already running, restart the interval
+        const miningSessionTime = Math.floor((Date.now() - miningData.sessionStartTime) / 60000); // in minutes
 
-                if (miningSessionTime >= 720) {
-                    clearInterval(miningInterval);
-                    miningData.sessionStartTime = null;
+        if (miningSessionTime < 720) {
+            // Continue mining session if time is less than 12 hours
+            miningInterval = setInterval(() => {
+                if (miningData.sessionStartTime) {
+                    const miningSessionTime = Math.floor((Date.now() - miningData.sessionStartTime) / 60000); // in minutes
+
+                    // Increase mining total based on the rate
+                    miningData.totalMining += miningData.miningRate;
                     localStorage.setItem('miningData', JSON.stringify(miningData));
+                    updateMiningDisplay();  // Update display to show current mining stats
 
-                    document.getElementById('miningStatus').textContent = "Mining session has ended. Starting a new session.";
-                    document.getElementById('startMiningBtn').style.display = 'inline';
+                    // After 12 hours, stop the mining session and increase the session count
+                    if (miningSessionTime >= 720) { // 720 minutes = 12 hours
+                        clearInterval(miningInterval); // Stop mining after 12 hours
+                        miningData.sessionStartTime = null;  // Reset session start time for new session
+                        localStorage.setItem('miningData', JSON.stringify(miningData)); // Save updated data
+
+                        document.getElementById('miningStatus').textContent = "Mining session has ended. Starting a new session.";
+                        document.getElementById('startMiningBtn').style.display = 'inline';  // Allow to start a new session
+                    }
                 }
-            }
-        }, 5000);
+            }, 5000);  // Update every 5 seconds
+        } else {
+            // Session has ended
+            miningData.sessionStartTime = null;
+            localStorage.setItem('miningData', JSON.stringify(miningData)); // Reset session data
+            document.getElementById('miningStatus').textContent = "Mining session has ended. Starting a new session.";
+            document.getElementById('startMiningBtn').style.display = 'inline';  // Allow to start a new session
+        }
+    } else {
+        // If there's no active mining session, start a new session
+        showMiningPopup();
     }
-
-    showMiningPopup();
 };
 
 function submitWithdrawal() {
