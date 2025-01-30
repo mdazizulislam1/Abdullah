@@ -417,6 +417,50 @@ function showTasks() {
         reader.readAsDataURL(proofImage);
     }
 
+        function confirmTask(taskId) {
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            userData.balance += task.rate;
+            userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
+            userData.completedTasks.push(taskId);
+            saveData();
+
+            alert(`Task confirmed. New balance: $${userData.balance}`);
+            showPendingTasks();
+        }
+    }
+
+    function rejectTask(taskId) {
+        userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
+        saveData();
+
+        alert("Task rejected. Please ensure your proof meets the requirements.");
+        showPendingTasks();
+    }
+
+    function showPendingTasks() {
+        let pendingList = '';
+        const currentTime = Date.now();
+
+        userData.pendingTasks.forEach(taskId => {
+            const task = tasks.find(t => t.id === taskId);
+            const taskTimer = userData.taskTimers[taskId] || {};
+            const timeElapsed = Math.floor((currentTime - taskTimer.submitted) / 1000);
+            const status = timeElapsed >= 5 ? "Checked" : `Pending (${5 - timeElapsed}s)`;
+
+            pendingList += `
+                <div>
+                    <h4>${task.title}</h4>
+                    <p>${task.description}</p>
+                    <p>Rate: $${task.rate}</p>
+                    <p>Status: ${status}</p>
+                </div>
+                <hr>`;
+        });
+
+        document.getElementById('taskPendingPopupContent').innerHTML = pendingList || "<p>No pending tasks.</p>";
+    }
+
     // Call on page load
     window.onload = function() {
         // Recheck proof check timers if any task is pending
