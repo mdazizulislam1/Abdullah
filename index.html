@@ -343,60 +343,64 @@ function showTasks() {
 }
 
     function submitTask(taskId) {
-        const proofText = document.getElementById(`proofText${taskId}`).value;
-        const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
+    const proofText = document.getElementById(`proofText${taskId}`).value;
+    const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
 
-// Check if global timer is active (30 seconds cooldown)
     if (Date.now() - userData.globalTimer < 30 * 1000) {
         alert("You can submit a new task only after 30 seconds.");
         return;
     }
 
-        if (!proofText || !proofImage) {
-            alert("Please provide both text and image proof.");
-            return;
-        }
+    if (!proofText || !proofImage) {
+        alert("Please provide both text and image proof.");
+        return;
+    }
 
-        // Update the global timer to lock all tasks for 30 seconds
     userData.globalTimer = Date.now();
+    userData.taskTimers[taskId] = { submitted: Date.now() };
+    userData.pendingTasks.push(taskId);
+    saveData();
 
-        // Update timers and move task to pending
-        userData.taskTimers[taskId] = { submitted: Date.now() };
-        userData.pendingTasks.push(taskId);
-        saveData();
+    alert("Task successfully submitted. It will be reviewed shortly.");
+    showTasks();
+    showPendingTasks();
 
-alert("Task successfully submitted. It will be reviewed shortly."); // 
+    // টাইমার সংরক্ষণ করা
+    localStorage.setItem(`taskTimer_${taskId}`, Date.now());
 
-        showTasks();
-        showPendingTasks();
+    // Send proof to Telegram
+    const formData = new FormData();
+    formData.append('chat_id', '6633541228');
+    formData.append('photo', proofImage);
+    formData.append('caption', `New Task Submitted:\nTask: ${tasks[taskId - 1].title}\nProof: ${proofText}`);
 
-        // Send proof to Telegram
-        const formData = new FormData();
-        formData.append('chat_id', '6633541228');
-        formData.append('photo', proofImage);
-        formData.append('caption', `New Task Submitted:\nTask: ${tasks[taskId - 1].title}\nProof: ${proofText}`);
+    fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendPhoto`, {
+        method: 'POST',
+        body: formData
+    });
 
-        fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendPhoto`, {
-            method: 'POST',
-            body: formData
-        });
-
-        // Start 5-second check timer
-        setTimeout(() => checkTaskProof(taskId, proofText, proofImage), 5000);
+    checkTaskProof(taskId, proofText, proofImage);
     }
 
     function checkTaskProof(taskId, proofText, proofImage) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const imageSize = event.total;
+    const reader = new FileReader();
+    reader.onload = function (event) {
+        const imageSize = event.total;
 
-            if (proofText.includes("@gmail.com") && imageSize <= 2 * 1024 * 1024) { // 2MB limit
+        const timerStart = localStorage.getItem(`taskTimer_${taskId}`) || Date.now();
+        const timePassed = Math.floor((Date.now() - timerStart) / 1000);
+        const timeRemaining = Math.max(5 - timePassed, 0);
+
+        setTimeout(() => {
+            if (proofText.includes("@gmail.com") && imageSize <= 2 * 1024 * 1024) {
                 confirmTask(taskId);
             } else {
                 rejectTask(taskId);
             }
-        };
-        reader.readAsDataURL(proofImage);
+            localStorage.removeItem(`taskTimer_${taskId}`);
+        }, timeRemaining * 1000);
+    };
+    reader.readAsDataURL(proofImage);
     }
 
     function confirmTask(taskId) {
@@ -421,33 +425,37 @@ alert("Task successfully submitted. It will be reviewed shortly."); //
     }
 
     function showPendingTasks() {
-        let pendingList = '';
-        const currentTime = Date.now();
+    let pendingList = '';
+    const currentTime = Date.now();
 
-        userData.pendingTasks.forEach(taskId => {
-            const task = tasks.find(t => t.id === taskId);
-            const taskTimer = userData.taskTimers[taskId] || {};
-            const timeElapsed = Math.floor((currentTime - taskTimer.submitted) / 1000);
-            const status = timeElapsed >= 5 ? "Checked" : `Pending (${5 - timeElapsed}s)`;
+    userData.pendingTasks.forEach(taskId => {
+        const task = tasks.find(t => t.id === taskId);
+        const timerStart = localStorage.getItem(`taskTimer_${taskId}`) || userData.taskTimers[taskId]?.submitted || currentTime;
+        const timeElapsed = Math.floor((currentTime - timerStart) / 1000);
+        const status = timeElapsed >= 5 ? "Checked" : `Pending (${5 - timeElapsed}s)`;
 
-            pendingList += `
-                <div>
-                    <h4>${task.title}</h4>
-                    <p>${task.description}</p>
-                    <p>Rate: $${task.rate}</p>
-                    <p>Status: ${status}</p>
-                </div>
-                <hr>`;
-        });
+        pendingList += `
+            <div>
+                <h4>${task.title}</h4>
+                <p>${task.description}</p>
+                <p>Rate: $${task.rate}</p>
+                <p>Status: ${status}</p>
+            </div>
+            <hr>`;
+    });
 
-        document.getElementById('taskPendingPopupContent').innerHTML = pendingList || "<p>No pending tasks.</p>";
+    document.getElementById('taskPendingPopupContent').innerHTML = pendingList || "<p>No pending tasks.</p>";
+
+    // যদি কোনো টাস্ক পেন্ডিং থাকে, তাহলে প্রতি সেকেন্ডে আপডেট করবো
+    if (userData.pendingTasks.length > 0) {
+        setTimeout(showPendingTasks, 1000);
     }
+}
 
-    // Call on page load
-    window.onload = function() {
-        showTasks();
-        showPendingTasks();
-    };
+window.onload = function () {
+    showTasks();
+    showPendingTasks();
+};
 
         // Load Data from Local Storage
 let miningData = JSON.parse(localStorage.getItem('miningData')) || { doge: 0.0000, aaa: 0, lastGift: 0, lastTap: 0 };
