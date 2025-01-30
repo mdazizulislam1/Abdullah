@@ -346,6 +346,7 @@ function showTasks() {
     const proofText = document.getElementById(`proofText${taskId}`).value;
     const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
 
+    // Check if global timer is active (30 seconds cooldown)
     if (Date.now() - userData.globalTimer < 30 * 1000) {
         alert("You can submit a new task only after 30 seconds.");
         return;
@@ -356,17 +357,18 @@ function showTasks() {
         return;
     }
 
+    // Update the global timer to lock all tasks for 30 seconds
     userData.globalTimer = Date.now();
+
+    // Update timers and move task to pending
     userData.taskTimers[taskId] = { submitted: Date.now() };
     userData.pendingTasks.push(taskId);
     saveData();
 
-    alert("Task successfully submitted. It will be reviewed shortly.");
+    alert("Task successfully submitted. It will be reviewed shortly."); 
+
     showTasks();
     showPendingTasks();
-
-    // টাইমার সংরক্ষণ করা
-    localStorage.setItem(`taskTimer_${taskId}`, Date.now());
 
     // Send proof to Telegram
     const formData = new FormData();
@@ -379,29 +381,36 @@ function showTasks() {
         body: formData
     });
 
-    checkTaskProof(taskId, proofText, proofImage);
+    // Start 5-second check timer
+    // Save the task check timer to sessionStorage
+    sessionStorage.setItem(`taskCheckTimer-${taskId}`, Date.now());
+
+    setTimeout(() => checkTaskProof(taskId, proofText, proofImage), 5000);
+}
+
+function checkTaskProof(taskId, proofText, proofImage) {
+    const savedTime = sessionStorage.getItem(`taskCheckTimer-${taskId}`);
+    if (savedTime) {
+        const timeElapsed = Date.now() - savedTime;
+
+        if (timeElapsed >= 5000) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const imageSize = event.total;
+
+                if (proofText.includes("@gmail.com") && imageSize <= 2 * 1024 * 1024) { // 2MB limit
+                    confirmTask(taskId);
+                } else {
+                    rejectTask(taskId);
+                }
+            };
+            reader.readAsDataURL(proofImage);
+        } else {
+            // Timer not yet completed, retry after remaining time
+            setTimeout(() => checkTaskProof(taskId, proofText, proofImage), 5000 - timeElapsed);
+        }
     }
-
-    function checkTaskProof(taskId, proofText, proofImage) {
-    const reader = new FileReader();
-    reader.onload = function (event) {
-        const imageSize = event.total;
-
-        const timerStart = localStorage.getItem(`taskTimer_${taskId}`) || Date.now();
-        const timePassed = Math.floor((Date.now() - timerStart) / 1000);
-        const timeRemaining = Math.max(5 - timePassed, 0);
-
-        setTimeout(() => {
-            if (proofText.includes("@gmail.com") && imageSize <= 2 * 1024 * 1024) {
-                confirmTask(taskId);
-            } else {
-                rejectTask(taskId);
-            }
-            localStorage.removeItem(`taskTimer_${taskId}`);
-        }, timeRemaining * 1000);
-    };
-    reader.readAsDataURL(proofImage);
-    }
+}
 
     function confirmTask(taskId) {
         const task = tasks.find(t => t.id === taskId);
