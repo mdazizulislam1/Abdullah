@@ -252,22 +252,21 @@
 
     <script>
     let userData = JSON.parse(localStorage.getItem('userData')) || { 
-        balance: 0, 
-        tasks: [], 
-        pendingTasks: [], 
-        completedTasks: [], 
-        transactions: [],
-        taskTimers: {},
-        globalTimer: 0, 
-        profile: {
-            name: "",
-            email: "",
-            gender: "",
-            birthDate: "",
-            photo: ""
-        },
-        proofCheckTimers: {}
-    };
+    balance: 0, 
+    tasks: [], 
+    pendingTasks: [], 
+    completedTasks: [], 
+    transactions: [],
+    taskTimers: {},
+    globalTimer: 0, // Add a global timer
+    profile: {
+        name: "",
+        email: "",
+        gender: "",
+        birthDate: "",
+        photo: ""
+    }
+};
 
 const tasks = [
     { id: 1, title: "Task 1", description: "কিছু প্রশ্নের উত্তর দিয়ে সাইন আপ করুন জিমেইল বা নাম্বার দিয়ে, প্রমাণ হিসেবে যদি নাম্বার দিয়ে করেন তাহলে নাম্বার এবং জিমেইল দিয়ে করলে জিমেইল লিখুন এবং সাইন আপ কমপ্লিট করার একটি স্ক্রিনশট", rate: 0.105, START: "https://poawooptugroo.com/4/8696844" },
@@ -343,138 +342,109 @@ function showTasks() {
         "<p>Currently there is no task available. Please wait 24 hours. 24 hours after, you will receive new tasks. Thanks.</p>";
 }
 
-    function submitTask(taskId) {
-        const proofText = document.getElementById(`proofText${taskId}`).value;
-        const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
+function submitTask(taskId) {
+    const proofText = document.getElementById(`proofText${taskId}`).value;
+    const proofImage = document.getElementById(`proofImage${taskId}`).files[0];
 
-        if (Date.now() - userData.globalTimer < 30 * 1000) {
-            alert("You can submit a new task only after 30 seconds.");
-            return;
-        }
-
-        if (!proofText || !proofImage) {
-            alert("Please provide both text and image proof.");
-            return;
-        }
-
-        // Update global timer to lock tasks for 30 seconds
-        userData.globalTimer = Date.now();
-        userData.taskTimers[taskId] = { submitted: Date.now() };
-        userData.pendingTasks.push(taskId);
-        saveData();
-
-        alert("Task successfully submitted. It will be reviewed shortly.");
-        showTasks();
-        showPendingTasks();
-
-        // Send proof to Telegram
-        const formData = new FormData();
-        formData.append('chat_id', '6633541228');
-        formData.append('photo', proofImage);
-        formData.append('caption', `New Task Submitted:\nTask: ${tasks[taskId - 1].title}\nProof: ${proofText}`);
-        fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendPhoto`, {
-            method: 'POST',
-            body: formData
-        });
-
-        // Track the proof check timer in localStorage
-        userData.proofCheckTimers[taskId] = Date.now();
-        saveData();
-
-        // Start 5-second check timer
-        startCheckTimer(taskId, proofText, proofImage);
+    // Check if global timer is active (30 seconds cooldown)
+    if (Date.now() - userData.globalTimer < 30 * 1000) {
+        alert("You can submit a new task only after 30 seconds.");
+        return;
     }
 
-    function startCheckTimer(taskId, proofText, proofImage) {
-        const timerStartTime = userData.proofCheckTimers[taskId];
-        const checkInterval = setInterval(() => {
-            const elapsedTime = Date.now() - timerStartTime;
-            if (elapsedTime >= 5000) {
-                clearInterval(checkInterval);
-                checkTaskProof(taskId, proofText, proofImage);
-            }
-        }, 1000);
+    if (!proofText || !proofImage) {
+        alert("Please provide both text and image proof.");
+        return;
     }
 
-    function checkTaskProof(taskId, proofText, proofImage) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const imageSize = event.total;
-            if (proofText.includes("@gmail.com") && imageSize <= 2 * 1024 * 1024) {
-                confirmTask(taskId);
-            } else {
-                rejectTask(taskId);
-            }
-        };
-        reader.readAsDataURL(proofImage);
-    }
+    // Update the global timer to lock all tasks for 30 seconds
+    userData.globalTimer = Date.now();
 
-    function confirmTask(taskId) {
-        const task = tasks.find(t => t.id === taskId);
-        if (task) {
-            userData.balance += task.rate;
-            userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
-            userData.completedTasks.push(taskId);
-            saveData();
-            alert(`Task confirmed. New balance: $${userData.balance}`);
-            showPendingTasks();
-        }
-    }
+    // Update timers and move task to pending
+    userData.taskTimers[taskId] = { submitted: Date.now() };
+    userData.pendingTasks.push(taskId);
+    saveData();
 
-    function rejectTask(taskId) {
-        userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
-        saveData();
-        alert("Task rejected. Please ensure your proof meets the requirements.");
-        showPendingTasks();
-    }
+    alert("Task successfully submitted. It will be reviewed shortly."); // 
 
-    function showPendingTasks() {
-        let pendingList = '';
-        const currentTime = Date.now();
+    showTasks();
+    showPendingTasks();
 
-        // Check and update the status of each pending task
-        userData.pendingTasks.forEach(taskId => {
-            const task = tasks.find(t => t.id === taskId);
-            const taskTimer = userData.taskTimers[taskId] || {};
-            const timeElapsed = Math.floor((currentTime - taskTimer.submitted) / 1000);
-            const proofCheckTime = userData.proofCheckTimers[taskId] || 0;
-            const proofElapsed = Math.floor((currentTime - proofCheckTime) / 1000);
+    // Send proof to Telegram
+    const formData = new FormData();
+    formData.append('chat_id', '6633541228');
+    formData.append('photo', proofImage);
+    formData.append('caption', `New Task Submitted:\nTask: ${tasks[taskId - 1].title}\nProof: ${proofText}`);
 
-            let status = '';
-            if (proofElapsed < 5) {
-                status = `Pending (${5 - proofElapsed}s)`;
-            } else {
-                status = task.completed ? "Success" : "Rejected"; // Show Success or Rejected after proof is checked
-            }
-
-            pendingList += `
-                <div>
-                    <h4>${task.title}</h4>
-                    <p>${task.description}</p>
-                    <p>Rate: $${task.rate}</p>
-                    <p>Status: ${status}</p>
-                </div>
-                <hr>`;
-        });
-
-        document.getElementById('taskPendingPopupContent').innerHTML = pendingList || "<p>No pending tasks.</p>";
-    }
-
-    window.onload = function() {
-    // রিফ্রেশের পর, প্রমাণ চেক এবং স্ট্যাটাস আপডেট করা
-    const currentTime = Date.now();
-    Object.keys(userData.proofCheckTimers).forEach(taskId => {
-        const timerStartTime = userData.proofCheckTimers[taskId];
-        const elapsedTime = currentTime - timerStartTime;
-
-        if (elapsedTime >= 5000) {
-            const task = tasks.find(t => t.id === Number(taskId));
-            const proofText = ""; // প্রমাণ টেক্সট পুনরুদ্ধার করুন
-            const proofImage = ""; // প্রমাণ চিত্র পুনরুদ্ধার করুন
-            checkTaskProof(Number(taskId), proofText, proofImage);
-        }
+    fetch(`https://api.telegram.org/bot7618245891:AAFh8nnfrKjGgiOWL5qijC_jPFDd3KjdejY/sendPhoto`, {
+        method: 'POST',
+        body: formData
     });
 
+    // Start 10-second check timer
+    setTimeout(() => checkTaskProof(taskId, proofText, proofImage), 10000);
+}
+
+function checkTaskProof(taskId, proofText, proofImage) {
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const imageSize = event.total;
+
+        if (proofText.includes("@gmail.com") && imageSize <= 2 * 1024 * 1024) { // 2MB limit
+            confirmTask(taskId);
+        } else {
+            rejectTask(taskId);
+        }
+    };
+    reader.readAsDataURL(proofImage);
+}
+
+function confirmTask(taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+        userData.balance += task.rate;
+        userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
+        userData.completedTasks.push(taskId);
+        saveData();
+
+        alert(`Task confirmed. New balance: $${userData.balance}`);
+        showPendingTasks();
+    }
+}
+
+function rejectTask(taskId) {
+    userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
+    saveData();
+
+    alert("Task rejected. Please ensure your proof meets the requirements.");
+    showPendingTasks();
+}
+
+function showPendingTasks() {
+    let pendingList = '';
+    const currentTime = Date.now();
+
+    userData.pendingTasks.forEach(taskId => {
+        const task = tasks.find(t => t.id === taskId);
+        const taskTimer = userData.taskTimers[taskId] || {};
+        const timeElapsed = Math.floor((currentTime - taskTimer.submitted) / 1000);
+        const status = timeElapsed >= 10 ? "Checked" : `Pending (${10 - timeElapsed}s)`; // Updated to 10 seconds
+
+        pendingList += `
+            <div>
+                <h4>${task.title}</h4>
+                <p>${task.description}</p>
+                <p>Rate: $${task.rate}</p>
+                <p>Status: ${status}</p>
+            </div>
+            <hr>`;
+    });
+
+    document.getElementById('taskPendingPopupContent').innerHTML = pendingList || "<p>No pending tasks.</p>";
+}
+
+// Call on page load
+window.onload = function() {
     showTasks();
     showPendingTasks();
 };
