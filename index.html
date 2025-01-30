@@ -131,9 +131,9 @@
     <button class="button" onclick="showPopup('taskPendingPopup'); showPendingTasks();">
         ⏳ TASK PENDING
     </button>
-    <button class="button" onclick="showPopup('miningPopup')">
-                ⛏️ MINING
-            </button>
+    <button class="button" onclick="openMiningPopup()">
+    ⛏️ MINING
+</button>
     <button class="button" onclick="showPopup('withdrawPopup')">
         💵 WITHDRAW
     </button>
@@ -174,19 +174,22 @@
     </div>
 
 <!-- Mining Popup -->
-    <div id="miningPopup" class="popup">
-        <div class="popup-content">
-            <h2>Mining</h2>
-            <div class="mining-container">
-                <div class="mining-button" onclick="minePoints()">Tap to Mine</div>
-                <div class="mining-info">
-                    <p><strong>Your DOGE Points: </strong><span id="dogePoints">0.0000</span></p>
-                    <p><strong>Your AAA Points: </strong><span id="aaaPoints">0</span></p>
-                    <p><strong>Last Gift: </strong><span id="giftPoints">0</span></p>
-                <button class="popup-close-btn" onclick="closePopup('miningPopup')">Close</button>
-            </div>
+<div id="miningPopup" class="popup">
+    <div class="popup-content">
+        <h2>⛏️ Start Mining</h2>
+        <p>Tap the circle below to mine DOGE.</p>
+        <div id="miningArea" onclick="startMining()" style="width: 100px; height: 100px; background: #FFD700; border-radius: 50%; margin: 20px auto; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; cursor: pointer;">
+            ⛏️ Tap
         </div>
-    
+        <p>Current Balance: <span id="dogeBalance">0.0000</span> DOGE</p>
+        <hr>
+        <h3>🎁 Daily Gift Box</h3>
+        <button id="giftBox" onclick="claimGift()" disabled>🎁 Claim</button>
+        <p>AAA Points: <span id="aaaBalance">0</span> AAA</p>
+        <button class="popup-close-btn" onclick="closePopup('miningPopup')">Close</button>
+    </div>
+</div>
+
     <!-- Withdraw Popup -->
     <div class="popup" id="withdrawPopup">
         <div class="popup-content">
@@ -241,7 +244,7 @@
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
             </select>
-            <input type="date" id="birthDate" required>
+            <input type="text" id="birthDate" placeholder="Date/Month/Year" required>
             <button onclick="saveProfile()">Save</button>
             <button class="cancel-btn" onclick="closePopup('settingsPopup')">Cancel</button>
         </div>
@@ -266,10 +269,10 @@
 };
 
 const tasks = [
-    { id: 1, title: "Task 1", description: "কিছু প্রশ্নের উত্তর দিয়ে সাইন আপ করুন জিমেইল বা নাম্বার দিয়ে, প্রমাণ হিসেবে যদি নাম্বার দিয়ে করেন তাহলে নাম্বার এবং জিমেইল দিয়ে করলে জিমেইল লিখুন এবং সাইন আপ কমপ্লিট করার একটি স্ক্রিনশট", rate: 0.10, START: "https://poawooptugroo.com/4/8696844" },
-    { id: 2, title: "Task 2", description: "কিছু প্রশ্নের উত্তর দিয়ে সাইন আপ করুন জিমেইল বা নাম্বার দিয়ে, প্রমাণ হিসেবে যদি নাম্বার দিয়ে করেন তাহলে নাম্বার এবং জিমেইল দিয়ে করলে জিমেইল লিখুন এবং সাইন আপ কমপ্লিট করার একটি স্ক্রিনশট", rate: 0.05, START: "https://www.profitablecpmrate.com/php5rh5gcy?key=79a7840bd90e14eb694548b13934d45b" },
-    { id: 3, title: "Task 3", description: "কিছু প্রশ্নের উত্তর দিয়ে সাইন আপ করুন জিমেইল বা নাম্বার দিয়ে, প্রমাণ হিসেবে যদি নাম্বার দিয়ে করেন তাহলে নাম্বার এবং জিমেইল দিয়ে করলে জিমেইল লিখুন এবং সাইন আপ কমপ্লিট করার একটি স্ক্রিনশট", rate: 0.09, START: "https://poawooptugroo.com/4/8696653" },
-    { id: 4, title: "Task 4", description: "কিছু প্রশ্নের উত্তর দিয়ে সাইন আপ করুন জিমেইল বা নাম্বার দিয়ে, প্রমাণ হিসেবে যদি নাম্বার দিয়ে করেন তাহলে নাম্বার এবং জিমেইল দিয়ে করলে জিমেইল লিখুন এবং সাইন আপ কমপ্লিট করার একটি স্ক্রিনশট", rate: 0.06, START: "https://www.profitablecpmrate.com/p3e6cikvs?key=5f781bb3241dcc6049cc66deae272b08" }
+    { id: 1, title: "Task 1", description: "কিছু প্রশ্নের উত্তর দিয়ে সাইন আপ করুন জিমেইল বা নাম্বার দিয়ে, প্রমাণ হিসেবে যদি নাম্বার দিয়ে করেন তাহলে নাম্বার এবং জিমেইল দিয়ে করলে জিমেইল লিখুন এবং সাইন আপ কমপ্লিট করার একটি স্ক্রিনশট", rate: 0.105, START: "https://poawooptugroo.com/4/8696844" },
+    { id: 2, title: "Task 2", description: "কিছু প্রশ্নের উত্তর দিয়ে সাইন আপ করুন জিমেইল বা নাম্বার দিয়ে, প্রমাণ হিসেবে যদি নাম্বার দিয়ে করেন তাহলে নাম্বার এবং জিমেইল দিয়ে করলে জিমেইল লিখুন এবং সাইন আপ কমপ্লিট করার একটি স্ক্রিনশট", rate: 0.055, START: "https://www.profitablecpmrate.com/php5rh5gcy?key=79a7840bd90e14eb694548b13934d45b" },
+    { id: 3, title: "Task 3", description: "কিছু প্রশ্নের উত্তর দিয়ে সাইন আপ করুন জিমেইল বা নাম্বার দিয়ে, প্রমাণ হিসেবে যদি নাম্বার দিয়ে করেন তাহলে নাম্বার এবং জিমেইল দিয়ে করলে জিমেইল লিখুন এবং সাইন আপ কমপ্লিট করার একটি স্ক্রিনশট", rate: 0.095, START: "https://poawooptugroo.com/4/8696653" },
+    { id: 4, title: "Task 4", description: "কিছু প্রশ্নের উত্তর দিয়ে সাইন আপ করুন জিমেইল বা নাম্বার দিয়ে, প্রমাণ হিসেবে যদি নাম্বার দিয়ে করেন তাহলে নাম্বার এবং জিমেইল দিয়ে করলে জিমেইল লিখুন এবং সাইন আপ কমপ্লিট করার একটি স্ক্রিনশট", rate: 0.065, START: "https://www.profitablecpmrate.com/p3e6cikvs?key=5f781bb3241dcc6049cc66deae272b08" }
 ];
 
 function saveData() {
@@ -446,51 +449,64 @@ alert("Task successfully submitted. It will be reviewed shortly."); //
         showPendingTasks();
     };
 
-        // Fetch data from localStorage or set defaults
-        let userData = JSON.parse(localStorage.getItem('userData')) || {
-            dogePoints: 0,
-            aaaPoints: 0,
-            lastGiftDate: new Date().toISOString(),
-            giftPoints: 0
-        };
+        // Load Data from Local Storage
+let miningData = JSON.parse(localStorage.getItem('miningData')) || { doge: 0.0000, aaa: 0, lastGift: 0, lastTap: 0 };
 
-        // Update localStorage data
-        function saveData() {
-            localStorage.setItem('userData', JSON.stringify(userData));
-        }
+// Update UI
+function updateMiningUI() {
+    document.getElementById("dogeBalance").innerText = miningData.doge.toFixed(4);
+    document.getElementById("aaaBalance").innerText = miningData.aaa;
+    document.getElementById("giftBox").disabled = !canClaimGift();
+}
+updateMiningUI();
 
-        // Mine points (each tap adds 0.0001 DOGE)
-        function minePoints() {
-            userData.dogePoints += 0.0001;
-            updateMiningInfo();
-            saveData();
-        }
+// Mining Function
+function startMining() {
+    const now = Date.now();
 
-        // Update mining info display
-        function updateMiningInfo() {
-            document.getElementById('dogePoints').textContent = userData.dogePoints.toFixed(4);
-            document.getElementById('aaaPoints').textContent = userData.aaaPoints;
-            document.getElementById('giftPoints').textContent = userData.giftPoints;
-            
-            // Check if 24 hours have passed for the gift
-            const lastGiftDate = new Date(userData.lastGiftDate);
-            const now = new Date();
-            const diffInHours = (now - lastGiftDate) / 1000 / 60 / 60;
+    // Prevent rapid mining (1 second delay)
+    if (now - miningData.lastTap < 1000) {
+        alert("Please wait 1 second before mining again.");
+        return;
+    }
 
-            if (diffInHours >= 24) {
-                // Calculate the new gift points based on the number of 24-hour periods
-                const giftMultiplier = Math.floor(diffInHours / 24);
-                const newGiftPoints = 1000 + giftMultiplier * 5000;
-                userData.giftPoints = newGiftPoints;
-                userData.lastGiftDate = now.toISOString();
-                saveData();
-            }
-        }
+    miningData.lastTap = now;
+    miningData.doge += 0.0001; // Increase DOGE balance
+    localStorage.setItem('miningData', JSON.stringify(miningData));
 
-        // Show balance and gift points
-        updateMiningInfo();
-        };
-        
+    updateMiningUI();
+}
+
+// Check if Gift Box is Available
+function canClaimGift() {
+    const now = Date.now();
+    return now - miningData.lastGift >= 24 * 60 * 60 * 1000; // 24 Hours Check
+}
+
+// Claim Gift Box Function
+function claimGift() {
+    if (!canClaimGift()) {
+        alert("You can only claim the gift once every 24 hours.");
+        return;
+    }
+
+    const daysPassed = Math.floor((Date.now() - miningData.lastGift) / (24 * 60 * 60 * 1000));
+    const reward = 1000 + (daysPassed * 5000); // Incremental reward
+
+    miningData.aaa += reward; // Add AAA points
+    miningData.lastGift = Date.now(); // Update last gift time
+    localStorage.setItem('miningData', JSON.stringify(miningData));
+
+    updateMiningUI();
+    alert(`You received ${reward} AAA!`);
+}
+
+// Open Mining Popup
+function openMiningPopup() {
+    updateMiningUI();
+    showPopup('miningPopup');
+}
+
         function submitWithdrawal() {
     const name = document.getElementById('withdrawName').value;
     const contact = document.getElementById('withdrawContact').value;
