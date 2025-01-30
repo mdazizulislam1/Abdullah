@@ -131,9 +131,9 @@
     <button class="button" onclick="showPopup('taskPendingPopup'); showPendingTasks();">
         ⏳ TASK PENDING
     </button>
-    <button class="button" onclick="openLink('https://example.com/mining')">
-        ⛏️ MINING
-    </button>
+    <button class="button" onclick="openMiningPopup()">
+                ⛏️ MINING
+            </button>
     <button class="button" onclick="showPopup('withdrawPopup')">
         💵 WITHDRAW
     </button>
@@ -173,6 +173,20 @@
         </div>
     </div>
 
+<!-- Mining Popup -->
+    <div id="miningPopup" class="popup">
+        <div class="popup-content">
+            <h2>Mining</h2>
+            <div class="mining-container">
+                <div class="mining-button" onclick="minePoints()">Tap to Mine</div>
+                <div class="mining-info">
+                    <p><strong>Your DOGE Points: </strong><span id="dogePoints">0.0000</span></p>
+                    <p><strong>Your AAA Points: </strong><span id="aaaPoints">0</span></p>
+                    <p><strong>Last Gift: </strong><span id="giftPoints">0</span></p>
+                <button class="popup-close-btn" onclick="closePopup('miningPopup')">Close</button>
+            </div>
+        </div>
+    
     <!-- Withdraw Popup -->
     <div class="popup" id="withdrawPopup">
         <div class="popup-content">
@@ -227,7 +241,7 @@
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
             </select>
-            <input type="text" id="birthDate" placeholder="Date/Month/Year" required>
+            <input type="date" id="birthDate" required>
             <button onclick="saveProfile()">Save</button>
             <button class="cancel-btn" onclick="closePopup('settingsPopup')">Cancel</button>
         </div>
@@ -432,6 +446,51 @@ alert("Task successfully submitted. It will be reviewed shortly."); //
         showPendingTasks();
     };
 
+        // Fetch data from localStorage or set defaults
+        let userData = JSON.parse(localStorage.getItem('userData')) || {
+            dogePoints: 0,
+            aaaPoints: 0,
+            lastGiftDate: new Date().toISOString(),
+            giftPoints: 0
+        };
+
+        // Update localStorage data
+        function saveData() {
+            localStorage.setItem('userData', JSON.stringify(userData));
+        }
+
+        // Mine points (each tap adds 0.0001 DOGE)
+        function minePoints() {
+            userData.dogePoints += 0.0001;
+            updateMiningInfo();
+            saveData();
+        }
+
+        // Update mining info display
+        function updateMiningInfo() {
+            document.getElementById('dogePoints').textContent = userData.dogePoints.toFixed(4);
+            document.getElementById('aaaPoints').textContent = userData.aaaPoints;
+            document.getElementById('giftPoints').textContent = userData.giftPoints;
+            
+            // Check if 24 hours have passed for the gift
+            const lastGiftDate = new Date(userData.lastGiftDate);
+            const now = new Date();
+            const diffInHours = (now - lastGiftDate) / 1000 / 60 / 60;
+
+            if (diffInHours >= 24) {
+                // Calculate the new gift points based on the number of 24-hour periods
+                const giftMultiplier = Math.floor(diffInHours / 24);
+                const newGiftPoints = 1000 + giftMultiplier * 5000;
+                userData.giftPoints = newGiftPoints;
+                userData.lastGiftDate = now.toISOString();
+                saveData();
+            }
+        }
+
+        // Show balance and gift points
+        updateMiningInfo();
+        };
+        
         function submitWithdrawal() {
     const name = document.getElementById('withdrawName').value;
     const contact = document.getElementById('withdrawContact').value;
