@@ -258,8 +258,7 @@
         completedTasks: [], 
         transactions: [],
         taskTimers: {},
-        globalTimer: 0,
-        taskProofs: {}, // নতুন সংরক্ষণ ব্যবস্থা
+        globalTimer: 0, // Add a global timer
         profile: {
             name: "",
             email: "",
@@ -336,7 +335,8 @@ function showBalance() {
                 <hr>`;
         });
 
-        document.getElementById('taskPopupContent').innerHTML = taskList || "<p>No tasks available. Please wait 24 hours.</p>";
+        document.getElementById('taskPopupContent').innerHTML = taskList || 
+            "<p>Currently there is no task available. Please wait 24 hours.</p>";
     }
 
     function submitTask(taskId) {
@@ -354,36 +354,26 @@ function showBalance() {
         }
 
         userData.globalTimer = Date.now();
-        userData.taskTimers[taskId] = { submitted: Date.now() };
+        userData.taskTimers[taskId] = { submitted: Date.now(), proofText, proofImageName: proofImage.name };
         userData.pendingTasks.push(taskId);
-        
-        // লোকাল স্টোরেজে প্রমাণ সংরক্ষণ করুন
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            userData.taskProofs[taskId] = {
-                text: proofText,
-                image: event.target.result
-            };
-            saveData();
-            alert("Task successfully submitted. It will be reviewed shortly.");
-            showTasks();
-            showPendingTasks();
+        saveData();
 
-            setTimeout(() => checkTaskProof(taskId), 10000); // ১০ সেকেন্ড পর চেক হবে
-        };
-        reader.readAsDataURL(proofImage);
+        alert("Task successfully submitted. It will be reviewed shortly.");
+        showTasks();
+        showPendingTasks();
+
+        setTimeout(() => checkTaskProof(taskId), 10000); // ১০ সেকেন্ড
     }
 
     function checkTaskProof(taskId) {
-        if (!userData.taskProofs[taskId]) {
-            alert("Task proof not found. Please submit again.");
-            return;
-        }
+        const taskData = userData.taskTimers[taskId];
 
-        const { text, image } = userData.taskProofs[taskId];
-        const imageSize = image.length * (3 / 4); // Approximate size in bytes
+        if (!taskData) return;
 
-        if (text.includes("@gmail.com") && imageSize <= 2 * 1024 * 1024) {
+        const proofText = taskData.proofText;
+        const proofImageName = taskData.proofImageName;
+
+        if (proofText.includes("@gmail.com") && proofImageName) { // Check proof requirements
             confirmTask(taskId);
         } else {
             rejectTask(taskId);
@@ -396,7 +386,6 @@ function showBalance() {
             userData.balance += task.rate;
             userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
             userData.completedTasks.push(taskId);
-            delete userData.taskProofs[taskId]; // ডাটা মুছে ফেলা হবে
             saveData();
 
             alert(`Task confirmed. New balance: $${userData.balance}`);
@@ -406,7 +395,6 @@ function showBalance() {
 
     function rejectTask(taskId) {
         userData.pendingTasks = userData.pendingTasks.filter(id => id !== taskId);
-        delete userData.taskProofs[taskId]; // ডাটা মুছে ফেলা হবে
         saveData();
 
         alert("Task rejected. Please ensure your proof meets the requirements.");
@@ -439,6 +427,13 @@ function showBalance() {
     window.onload = function() {
         showTasks();
         showPendingTasks();
+
+        userData.pendingTasks.forEach(taskId => {
+            const taskTimer = userData.taskTimers[taskId];
+            if (taskTimer && Date.now() - taskTimer.submitted >= 10 * 1000) {
+                checkTaskProof(taskId);
+            }
+        });
     };
         
         // Load Data from Local Storage
