@@ -437,7 +437,14 @@ function showBalance() {
     };
         
         // Load Data from Local Storage
-let miningData = JSON.parse(localStorage.getItem('miningData')) || { doge: 0.0000, aaa: 0, lastGift: 0, lastTap: 0 };
+let miningData = JSON.parse(localStorage.getItem('miningData')) || { 
+    doge: 0.0000, 
+    aaa: 0, 
+    lastGift: 0, 
+    lastTap: 0, 
+    totalClicks: 0, 
+    firstGiftClaimed: false // প্রথমবারের গিফট চেক
+};
 
 // Update UI
 function updateMiningUI() {
@@ -447,27 +454,40 @@ function updateMiningUI() {
 }
 updateMiningUI();
 
-// Mining Function
+// Mining Function (১০,০০০ ক্লিক সীমা)
 function startMining() {
     const now = Date.now();
 
-    // Prevent rapid mining (1 second delay)
+    // প্রতি সেকেন্ডে একবার ক্লিক করা যাবে
     if (now - miningData.lastTap < 1000) {
         alert("Please wait 1 second before mining again.");
         return;
     }
 
-    miningData.lastTap = now;
-    miningData.doge += 0.0001; // Increase DOGE balance
-    localStorage.setItem('miningData', JSON.stringify(miningData));
+    // দৈনিক ১০,০০০ ক্লিকের সীমা
+    let today = new Date().toDateString();
+    if (miningData.lastTapDate !== today) {
+        miningData.totalClicks = 0; // নতুন দিনে ক্লিক রিসেট
+        miningData.lastTapDate = today;
+    }
 
+    if (miningData.totalClicks >= 10000) {
+        alert("You have reached the daily mining limit (10,000 clicks). Try again tomorrow.");
+        return;
+    }
+
+    miningData.lastTap = now;
+    miningData.totalClicks += 1; // ক্লিক সংখ্যা বাড়ানো
+    miningData.doge += 0.0001; // DOGE ব্যালান্স বৃদ্ধি
+
+    localStorage.setItem('miningData', JSON.stringify(miningData));
     updateMiningUI();
 }
 
 // Check if Gift Box is Available
 function canClaimGift() {
     const now = Date.now();
-    return now - miningData.lastGift >= 24 * 60 * 60 * 1000; // 24 Hours Check
+    return now - miningData.lastGift >= 24 * 60 * 60 * 1000; // ২৪ ঘণ্টার চেক
 }
 
 // Claim Gift Box Function
@@ -478,10 +498,17 @@ function claimGift() {
     }
 
     const daysPassed = Math.floor((Date.now() - miningData.lastGift) / (24 * 60 * 60 * 1000));
-    const reward = 1000 + (daysPassed * 5000); // Incremental reward
 
-    miningData.aaa += reward; // Add AAA points
-    miningData.lastGift = Date.now(); // Update last gift time
+    let reward;
+    if (!miningData.firstGiftClaimed) {
+        reward = 1000; // প্রথমবার কম পুরস্কার
+        miningData.firstGiftClaimed = true; // প্রথমবার চেক করা হলো
+    } else {
+        reward = 1000 + (daysPassed * 5000); // পরবর্তী দিনে বাড়তি পুরস্কার
+    }
+
+    miningData.aaa += reward; // AAA পয়েন্ট যোগ করা
+    miningData.lastGift = Date.now(); // শেষ গিফট সময় আপডেট
     localStorage.setItem('miningData', JSON.stringify(miningData));
 
     updateMiningUI();
