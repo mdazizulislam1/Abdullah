@@ -443,7 +443,9 @@ let miningData = JSON.parse(localStorage.getItem('miningData')) || {
     lastGift: 0, 
     lastTap: 0, 
     totalClicks: 0, 
-    firstGiftClaimed: false // প্রথমবারের গিফট চেক
+    firstGiftClaimed: false, // প্রথমবারের গিফট চেক
+    lastTapDate: "", // শেষবার ক্লিকের তারিখ
+    miningResetTime: 0 // মাইনিং পুনরায় চালু হওয়ার সময়
 };
 
 // Update UI
@@ -454,28 +456,35 @@ function updateMiningUI() {
 }
 updateMiningUI();
 
-// Mining Function (১০,০০০ ক্লিক সীমা)
+// **Mining Function (১০,০০০ ক্লিক সীমা)**
 function startMining() {
     const now = Date.now();
+    let today = new Date().toDateString();
 
-    // প্রতি সেকেন্ডে একবার ক্লিক করা যাবে
-    if (now - miningData.lastTap < 1000) {
-        alert("Please wait 1 second before mining again.");
+    // যদি মাইনিং বন্ধ থাকে, তখন সময় দেখাবে
+    if (miningData.miningResetTime > now) {
+        let remainingTime = Math.ceil((miningData.miningResetTime - now) / (60 * 1000)); // মিনিটে রূপান্তর
+        alert(`You have reached the daily limit. Please wait ${remainingTime} minutes to mine again.`);
         return;
     }
 
-    // দৈনিক ১০,০০০ ক্লিকের সীমা
-    let today = new Date().toDateString();
+    // নতুন দিনে ক্লিক সংখ্যা রিসেট
     if (miningData.lastTapDate !== today) {
-        miningData.totalClicks = 0; // নতুন দিনে ক্লিক রিসেট
+        miningData.totalClicks = 0; 
         miningData.lastTapDate = today;
     }
 
+    // **দৈনিক ১০,০০০ ক্লিক সীমা**
     if (miningData.totalClicks >= 10000) {
-        alert("You have reached the daily mining limit (10,000 clicks). Try again tomorrow.");
+        miningData.miningResetTime = now + (24 * 60 * 60 * 1000); // ২৪ ঘন্টা পরে পুনরায় চালু হবে
+        localStorage.setItem('miningData', JSON.stringify(miningData));
+        
+        let remainingTime = Math.ceil((miningData.miningResetTime - now) / (60 * 1000)); // মিনিট গণনা
+        alert(`You have reached the daily limit. Please wait ${remainingTime} minutes to mine again.`);
         return;
     }
 
+    // মাইনিং আপডেট
     miningData.lastTap = now;
     miningData.totalClicks += 1; // ক্লিক সংখ্যা বাড়ানো
     miningData.doge += 0.0001; // DOGE ব্যালান্স বৃদ্ধি
@@ -484,13 +493,13 @@ function startMining() {
     updateMiningUI();
 }
 
-// Check if Gift Box is Available
+// **Check if Gift Box is Available**
 function canClaimGift() {
     const now = Date.now();
     return now - miningData.lastGift >= 24 * 60 * 60 * 1000; // ২৪ ঘণ্টার চেক
 }
 
-// Claim Gift Box Function
+// **Claim Gift Box Function**
 function claimGift() {
     if (!canClaimGift()) {
         alert("You can only claim the gift once every 24 hours.");
@@ -515,7 +524,7 @@ function claimGift() {
     alert(`You received ${reward} AAA!`);
 }
 
-// Open Mining Popup
+// **Open Mining Popup**
 function openMiningPopup() {
     updateMiningUI();
     showPopup('miningPopup');
